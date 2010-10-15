@@ -1,0 +1,4 @@
+# KBuildMiner properties template
+# rename to miner.properties
+#
+codebase = ../../workspace/linux-2.6.28.6

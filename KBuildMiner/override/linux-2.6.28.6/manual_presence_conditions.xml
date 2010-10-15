@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<buildRootNode>
+    <fragment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ObjectFile" sourceFile="arch/x86/kernel/asm-offsets.c" generated="false" expr="1"/>
+    <!--fragment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ObjectFile" sourceFile="net/dccp/ipv6.c" generated="false" expr="CONFIG_IPV6_m | ( CONFIG_IP_DCCP_m &amp; (CONFIG_IPV6_y | CONFIG_IP_DCCP_m) ) | ( CONFIG_IP_DCCP_y &amp; (CONFIG_IPV6_y | CONFIG_IP_DCCP_m ) ) | (CONFIG_IPV6_y &amp; ( CONFIG_IP_DCCP_y | CONFIG_IP_DCCP_m ))"/-->
+    <fragment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ObjectFile" sourceFile="net/dccp/ipv6.c" generated="false" expr="CONFIG_IPV6_m | ( CONFIG_IPV6_y &amp; ( CONFIG_IP_DCCP_m | CONFIG_IP_DCCP_y ) )"/>
+    <fragment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ObjectFile" sourceFile="fs/xfs/quota/xfs_qm_stats.c" generated="false" expr="(CONFIG_PROC_FS_y &amp; ( CONFIG_XFS_QUOTA_y &amp; (CONFIG_XFS_FS_y | CONFIG_XFS_FS_m)))"/>
+</buildRootNode>
