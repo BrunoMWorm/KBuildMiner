@@ -61,6 +61,10 @@
                     <args>
                         <arg>-target:jvm-1.5</arg>
                     </args>
+                    <jvmArgs>
+                        <jvmArg>-Xmx3000m</jvmArg>
+                        <jvmArg>-Xss10m</jvmArg>
+                    </jvmArgs>
                 </configuration>
                 
             </plugin>

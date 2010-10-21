@@ -16,17 +16,18 @@
  */
 package gsd.buildanalysis.linux.model
 
-import gsd.buildanalysis.linux.{Project, Expression}
-import gsd.common.Logging
+import gsd.buildanalysis.linux.Expression
+import kiama.attribution.Attribution._
+import kiama.attribution.Attributable
+import kiama.rewriting.Rewriter
 
 /**
  * Represents the AST we derive from the whole build system.
  */
 case class BNode( ntype: BNodeType,
-//                  parent: Option[BNode],
-                  children: List[BNode],
+                  subnodes: List[BNode],  // "children" collides with a field in Attributable
                   exp: Option[Expression],
-                  details: BNodeDetails )
+                  details: BNodeDetails ) extends Attributable
 
 sealed abstract class BNodeType
 
@@ -57,3 +58,71 @@ case class TempReferenceDetails( variable: String,
 case class TempCompositeListDetails( listName: String,
                                      suffix: Option[String] ) extends BNodeDetails
 
+/**
+ * Attribute grammar implementation...
+ */
+trait TreeHelper extends Rewriter{
+
+  /**
+   * Attribute that returns the "Makefile scope" of nodes, i.e. the next
+   * Makefile node in the hierarchy (without current node).
+   */
+  val mfScope: BNode ==> BNode =
+    attr{
+      case BNode( RootNode, _, _, _ ) =>
+        Predef.error( "No containing Makefile found!" )
+      case b => b.parent[BNode] match{
+        case p@BNode( MakefileBNode, _, _, _ ) => p
+        case _ => b.parent[BNode]->mfScope
+      }
+    }
+
+  /**
+   * Attribute that calculates possible predecessors in terms of control and
+   * data flow.
+   */
+  val moveUp: BNode ==> List[BNode] =
+    attr{
+      case BNode( RootNode, _, _, _ ) => List()
+      case b@BNode( TempCompositeListBNode, _, _, TempCompositeListDetails( ln, _ ) ) =>{
+        val compositeObjects = findCompositeObjectNodes( ln, b->mfScope )
+        val referenceNodes = findTempReferenceNodes( ln, b->mfScope )
+        compositeObjects ::: referenceNodes
+      }
+      case b:BNode => b.parent[BNode] :: Nil
+    }
+
+  private def findCompositeObjectNodes( listName: String, scope: BNode ): List[BNode] =
+    collectl{
+      case b@BNode( ObjectBNode, _, _, ObjectDetails( oF, _, _, false, None, _ ) ) if oF == listName => b
+    }( scope )
+
+	/**
+	 * Ignore references in patterns like in crypto/Makefile
+	 * crypto_algapi-$(CONFIG_PROC_FS) += proc.o
+	 * crypto_algapi-objs := algapi.o scatterwalk.o $(crypto_algapi-y)
+	 * obj-$(CONFIG_CRYPTO_ALGAPI2) += crypto_algapi.o
+	 *
+	 * i.e. ignore the inclusion of $(list-y) in list-objs, since it's unnecessary and doesn't affect variability conditions (and causes troubles...)
+	 *
+   */
+  private def findTempReferenceNodes( name: String, scope: BNode ): List[BNode] =
+    collectl{
+      case b@BNode( TempReferenceBNode, _, _, TempReferenceDetails( variable, _ ) )
+        if( variable == name && ( b.parent[BNode] match{
+          case BNode( _, _, _, TempCompositeListDetails( lN, _ ) ) if lN == variable => false
+          case _ => true
+        } ) ) => b
+    }( scope )
+
+  def getSourceFile( b: BNode ): String = b match{
+    case BNode( _, _, _, ObjectDetails( _, _, _, _, Some( sF ), _ ) ) => sF
+    case _ => Predef.error( "Not an ObjectBNode with an associated source file!" )
+  }
+
+//
+//  def findShortestPathTo( start: BNode, target: BNode, scope: BNode ) ={
+//
+//  }
+
+}

@@ -17,8 +17,9 @@
 package gsd.buildanalysis.linux
 
 import java.io.File
+import model.{MakefileDetails, BNode, TreeHelper}
 
-class Project( val basedir: String, val overrideFolder: String ){
+class Project( val basedir: String, val overrideFolder: String ) extends TreeHelper{
 
   def getHandle( relativePathToMakefile: String ): File = {
     var checkOverride = new File( overrideFolder + "/" + relativePathToMakefile)
@@ -48,6 +49,44 @@ class Project( val basedir: String, val overrideFolder: String ){
       return currentFolder + "/" + rp + "Makefile"
 
     error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+  }
+
+  /**
+   * Lookup source file of object node
+   */
+  def getSource( b: BNode, oF: String, gen: Boolean ): Option[String] ={
+
+    val mf = b->mfScope match{
+      case BNode(_,_,_,MakefileDetails(m)) => m
+      case _ => Predef.error( "No Makefile node!" )
+    }
+
+    val currentFolder = if( oF startsWith "/" )
+        "" // absolute object path
+      else if( mf == "arch/x86/Makefile" )
+        "" // exception for arch/x86/Makefile, which runs in / and, thus,
+           // has full relative paths, e.g. arch/x86/kernel/head.o
+      else
+        mf.substring( 0, mf lastIndexOf '/' )
+
+    // check that source file paths don't start with one or more "/"
+    def sanitize( f: String ): String =
+      if( f startsWith "/" ) sanitize(f substring 1) else f
+
+    val cPath = currentFolder + "/" + oF + ".c"
+    val c = new File( basedir + "/" + cPath )
+    if( c.exists || gen ) // safe assumption, since no assembler files are generated
+      Some( sanitize( cPath ) )
+    else{
+      // check for assembler source
+      val asmPath = currentFolder + "/" + oF + ".S"
+      val a = new File( basedir + "/" + asmPath )
+      if( a exists )
+        Some( sanitize( asmPath ) )
+      else
+        None
+    }
+
   }
 
 }

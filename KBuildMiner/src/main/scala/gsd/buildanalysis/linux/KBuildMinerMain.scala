@@ -17,10 +17,10 @@
 package gsd.buildanalysis.linux
 
 import java.util.Properties
-import java.io.{File, FileReader}
 import model._
 import gsd.common.Logging
 import org.antlr.runtime.{CommonTokenStream, ANTLRFileStream, CharStream}
+import java.io.{PrintWriter, FileWriter, File, FileReader}
 
 /**
  * Run the KBuild miner with this main class.
@@ -37,27 +37,39 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   val OVERRIDE_Folder = "override/linux-2.6.28.6"
 
   val AST_OUTPUT = "output/makefile_tree.xml"
-  val PC_OUTPUT = "output/sourcefile_expressions.xml"
+  val PC_OUTPUT = "output/presence_conditions.txt"
 
 
   def main( codebase: Option[String],
             astOutput: Option[String],
             pcOutput: Option[String],
             overrideFolder: Option[String],
-            manualPCs: Option[String] ){
+            manualPCs: Option[String],
+            saveAST: Option[String] ){
 
     val _codebase   = getArg( codebase, "codebase", Linux_KERNEL )
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
     val _overrideFolder = getArg( overrideFolder, "overrideFolder", OVERRIDE_Folder )
     val _manualPCs  = getArg( manualPCs, "manualPCs", Manual_PCs )
+    val _saveAST = getArg( saveAST, "saveAST", "true" )
 
     val p = new Project( _codebase, _overrideFolder )
     new File( "output/logs" ) mkdirs
 
     info( "Starting KBuildMiner..." )
 
-    PersistenceManager.outputXML( buildAST( p ), _astOutput )
+    val ast = buildAST( p )
+
+    if( _saveAST == "true" )
+      PersistenceManager.outputXML( ast, _astOutput )
+
+    val pcs = new PCDerivationMain( p ).calculatePCs( ast )
+    val out = new PrintWriter( new FileWriter( PC_OUTPUT ) )
+    pcs.toList.sort( _._1 < _._1 ).foreach{ x =>
+      out.println( x._1 + ": " + PersistenceManager.pp( x._2 ) )
+    }
+    out close
 
     println
   }
@@ -92,7 +104,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       proj )
 
     info( "=== PreProcessing " + mf )
-    // TODO
+    // well, not really (for now)
 
     info( "=== Processing " + mf )
 
@@ -107,6 +119,15 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
     info( "=== PostProcessing " + mf )
 
+    // set source file
+    val setSourceFileRule = everywheretd{
+      rule{
+        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, None, fP ) ) =>
+          BNode( ObjectBNode, ch, exp,
+            ObjectDetails( oF, bA, ext, gen, proj.getSource( b, oF, gen ), fP ) )
+      }
+    }
+    // descend into and process the sub makefiles
     val processMakefilesRule = everywheretd{
       rule{
         case BNode( MakefileBNode, Nil, exp, MakefileDetails( m ) ) if m != mf =>
@@ -122,10 +143,9 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       case b@BNode( ObjectBNode, _, None, _ ) => b
     }(result) isEmpty )
 
-//    CompositeVarResolver.preprocess( mfn, proj )
-
     rewrite( postProcessingRule <*
              sequencerRule <*
+             setSourceFileRule <*
              processMakefilesRule )( result )
 
   }
@@ -188,7 +208,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
                   case BNode(_,_,_, TempCompositeListDetails( l, s )) if (l==ln && (s==None||s.get=="y") ) => true
                   case _ => false
                 })
-                val newTCLchildren = children ::: all.tail.flatMap( _.children )
+                val newTCLchildren = children ::: all.tail.flatMap( _.subnodes )
                 skip ++= all
                 
                 BNode( TempCompositeListBNode, newTCLchildren, expression, tcld ) :: Nil

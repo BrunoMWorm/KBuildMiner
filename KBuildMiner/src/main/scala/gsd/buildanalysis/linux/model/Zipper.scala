@@ -23,7 +23,7 @@ sealed case class NodeLoc(node: BNode, path: NodePath){
   }
 
   def downLastOp = {
-    val ch = node.children
+    val ch = node.subnodes
     if( ch.isEmpty )
       None
     else
@@ -78,13 +78,13 @@ sealed case class NodeLoc(node: BNode, path: NodePath){
   * Insert a node to the left of this node's children and return the
   * modified version of this location.
   */
-  final def \+: (n: BNode) = setChildren( n :: node.children )
+  final def \+: (n: BNode) = setChildren( n :: node.subnodes )
 
   /**
   * Insert the given node to the right of this node's children and return the
   * modified version of this location.
   */
-  final def :\+ (n: BNode) = setChildren( node.children ::: ( n :: Nil ) )
+  final def :\+ (n: BNode) = setChildren( node.subnodes ::: ( n :: Nil ) )
 
 }
 
