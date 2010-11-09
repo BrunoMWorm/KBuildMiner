@@ -44,16 +44,10 @@ object PersistenceManager extends Rewriter with Logging{
     case BNode( ObjectBNode, ch, _, _ ) => <Object>{ getXml(ch) }</Object>
     case BNode( TempReferenceBNode, ch, _, _ ) => <TempReference>{ getXml(ch) }</TempReference>
     case BNode( TempCompositeListBNode, ch, _, _ ) => <TempCompositeList>{ getXml(ch) }</TempCompositeList>
+    case n => Predef.error( "Unknown node: " + n )
   } ) % getDetails( bn )
 
   private def getXml( ch: List[BNode] ): Seq[Node] = ch map getXml
-
-//  implicit def toMap[A]( v: Tuple2[Option[A],String] ): Map[String,String] = v._1 match{
-//    case Some( x ) => Map( v._2 -> x.toString )
-//    case None => Map()
-//  }
-//
-//  implicit def toMap[A]( v: Tuple2[A,String] ): Map[String,String] = Map( v._2 -> v._1.toString )
 
   def getDetails( b: BNode ): Map[String,String] = b match{
     case BNode( _, _, exp, details ) => m( exp, "expr" ) ++ ( details match{

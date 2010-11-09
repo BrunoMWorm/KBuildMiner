@@ -48,7 +48,7 @@ class Project( val basedir: String, val overrideFolder: String ) extends TreeHel
     if( makefile.exists )
       return currentFolder + "/" + rp + "Makefile"
 
-    error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+    Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
   }
 
   /**

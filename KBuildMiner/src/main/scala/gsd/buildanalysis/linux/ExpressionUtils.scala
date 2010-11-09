@@ -20,6 +20,9 @@ import kiama.rewriting.Rewriter
 
 trait ExpressionUtils extends Rewriter{
 
+  val FALSE: Expression = False()
+  val TRUE: Expression = True()
+
   def simplify( e: Expression ) =
     rewrite( simplifyRule )(e)
 

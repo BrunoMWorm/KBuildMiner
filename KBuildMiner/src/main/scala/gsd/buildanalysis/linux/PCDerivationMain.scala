@@ -20,9 +20,9 @@ import model._
 import kiama.rewriting.Rewriter
 import gsd.common.Logging
 
-class PCDerivationMain( proj: Project ) extends Rewriter with TreeHelper with Logging with ExpressionUtils{
+object PCDerivationMain extends Rewriter with TreeHelper with Logging with ExpressionUtils{
 
-  case class Path( children: List[Path], node: BNode )
+  case class Path( children: List[Path], node: BNode, name: String )
 
   def calculatePCs( tree: BNode ): Map[String,Expression] = {
 
@@ -32,38 +32,63 @@ class PCDerivationMain( proj: Project ) extends Rewriter with TreeHelper with Lo
 
     var ret = Map[String,Expression]()
 
+//    val sourceFiles = collects{
+//      case ObjectDetails( _, _, _, _, Some( sF ), _ ) =>
+//        (sF, BNode( SourceFileBNode, List(), None, SourceFileDetails( sF ) ) )
+//    }(tree)
+//
+//    val paths = sourceFiles map{ case (sf, sfNode) => {
+//        val ch = List flatten collectl{
+//          case b@BNode( _, _, _, ObjectDetails( _, _, _, _, Some( name ), _ ) ) if name == sf =>{
+//            moveUpStrategy()(b) match{
+//              case Some( p: Path ) => p :: Nil
+//              case None => Nil
+//            }
+//          }
+//        }(tree)
+//
+//        Path( ch, sfNode, sf )
+//      }
+//    }
+//
+//    val ret = paths map ( p => ( p.name, path2Exp( p ) ) )
+
     for( o <- objectFiles ){
 
       val oF = getSourceFile( o )
-      debug( o toString )
+      debug( "Trying to find path for: " + o )
 
       moveUpStrategy()(o) match{
         case Some( p: Path ) => {
-          val exp = path2Exp(p)
+          debug( "...path found!" )
+          val exp = path2Exp( p )
           ret.get( oF ) match{
             case Some( e ) => ret += ( oF -> ( e | exp ) )
             case None => ret += ( oF -> exp )
           }
-          debug( oF + ": " + PersistenceManager.pp( exp ) )
+          debug( "Expression of path for object occurrence " + oF + ": " + PersistenceManager.pp( exp ) )
         }
-        case _ => ;
+        case _ => debug( "...no path found!" )
       }
 
     }
 
     // finally, try to simplify all expressions
-    Map( ret.map( x => ( x._1, simplify( x._2 ) ) ).toList: _* )
+    Map( ret.map{ case (a,b) => ( a, simplify(b) ) }.toList: _* )
 
   }
 
-  def path2Exp( p: Path ): Expression = {
-    getExp( p ) &
-            p.children.
-              map( path2Exp ).
-              foldLeft( True(): Expression )( _ | _ )
-  }
+  /**
+   * Convert path to expression...
+   */
+  def path2Exp( p: Path ): Expression =
+    if( p.children isEmpty )
+      getExp( p )
+    else
+      getExp( p ) &
+            ( FALSE /: p.children.map( path2Exp ) ) ( _ | _ )
 
-  def getExp( p: Path ) = p.node.exp match{
+  private def getExp( p: Path ) = p.node.exp match{
     case Some(e) => e
     case None => True()
   }
@@ -80,11 +105,11 @@ class PCDerivationMain( proj: Project ) extends Rewriter with TreeHelper with Lo
 
         t match{
           case b:BNode =>
-            trace( b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString )
+            trace( "moveUpStrategy: visiting " + node2String(b) )
         }
 
         t match{
-          case b@BNode( RootNode, _, _, _ ) => Some( Path( List(), b ) )
+          case b@BNode( RootNode, _, _, _ ) => Some( Path( List(), b, "root" ) )
           case b@BNode( _, _, _, _ ) => {
             val next = b->moveUp
             val res = next.map( moveUpStrategy( cache + t ) ).filter( _ != None )
@@ -94,7 +119,7 @@ class PCDerivationMain( proj: Project ) extends Rewriter with TreeHelper with Lo
               Some( Path( res.map( _ match{
                 case Some( p:Path ) => p
                 case _ => Predef error "Path expected"
-              } ), b ) )
+              } ), b, b.ntype.toString ) )
             }
           }
           case _ => None
@@ -102,6 +127,9 @@ class PCDerivationMain( proj: Project ) extends Rewriter with TreeHelper with Lo
       }
 
     }
+
+  private def node2String( b: BNode ) =
+    b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString
 
 //  def moveUpStrategy( s: => ForkableStrategy ): Strategy =
 //    new Strategy {

@@ -19,7 +19,7 @@ package gsd.buildanalysis.linux
 import java.util.Properties
 import model._
 import gsd.common.Logging
-import org.antlr.runtime.{CommonTokenStream, ANTLRFileStream, CharStream}
+import org.antlr.runtime.{CommonTokenStream, ANTLRFileStream}
 import java.io.{PrintWriter, FileWriter, File, FileReader}
 
 /**
@@ -27,7 +27,7 @@ import java.io.{PrintWriter, FileWriter, File, FileReader}
  */
 object KBuildMinerMain extends optional.Application with Logging with BuildMinerCommons{
 
-  val Linux_KERNEL = "../../../workspace/linux-2.6.28.6"
+  val Linux_KERNEL = "../../../workspace/codebases/linux-2.6.28.6"
   val PROPERTIES = "miner.properties"
   val TOP_MAKEFILE_FOLDERS = "arch/x86" :: "block" :: "crypto" :: "drivers" ::
                              "firmware" :: "fs" :: "init" :: "ipc" :: "kernel" ::
@@ -64,10 +64,10 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     if( _saveAST == "true" )
       PersistenceManager.outputXML( ast, _astOutput )
 
-    val pcs = new PCDerivationMain( p ).calculatePCs( ast )
+    val pcs = PCDerivationMain calculatePCs ast
     val out = new PrintWriter( new FileWriter( PC_OUTPUT ) )
-    pcs.toList.sort( _._1 < _._1 ).foreach{ x =>
-      out.println( x._1 + ": " + PersistenceManager.pp( x._2 ) )
+    pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
+      out.println( name + ": " + PersistenceManager.pp( rewrite( removeCONFIG_Prefix)( pc ) ) )
     }
     out close
 
@@ -89,6 +89,12 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       props.getProperty( id, default )
     }else                                     
       default
+  }
+
+  private val removeCONFIG_Prefix = everywheretd{
+    rule{
+      case Identifier( i ) if i startsWith "CONFIG_" => Identifier( i substring 7 )
+    }
   }
 
   private def buildAST( proj: Project ) =
@@ -222,42 +228,5 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       }
     }
   }
-
-
-
-//  private def runMiningOfPresenceConditions( makefileTree: BuildRootNode ): BuildRootNode = {
-//
-//    debug( "Multiple Source invocations: " )
-//
-//    var pathsToTop = Map[String, List[List[BuildNode]]]()
-//
-//    TraverseFactory.
-//            getTopToBottomTraverser( true, classOf[ObjectNode] ).
-//            traverse( makefileTree, new TraverseAdapter(){
-//
-//      def nodeVisit( node: BuildNode ) {
-//        debug( "Visiting node " + node )
-//        val on = node.asInstanceOf[ObjectNode]
-//        if( on.getSourceFile == null && on.isGenerated == false )
-//          return;
-//        val ptt = CompositeVarResolver.resolveExpressionForObjectNode( on )
-//
-//        pathsToTop.get( on.getSourceFile ) match{
-//          case Some( otherListOfPaths ) => {
-//            debug( "Found another occurance of: " + on.getSourceFile() )
-//            pathsToTop += ( on.getSourceFile -> otherListOfPaths ::: ptt )
-//          }
-//          case _ => pathsToTop += ( on.getSourceFile -> ptt )
-//        }
-//      }
-//    })
-//
-//    PathExpressionGenerator.outputExpressionsForSourcefiles( pathsToTop )
-//  }
-
-
-  private class LookupSourceReturn( val noExpressionFound: Set[String],
-                                    val foldersVisited: List[String],
-                                    val physicalSourceFilesBelongingToX86: Int )
 
 }

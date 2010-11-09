@@ -19,14 +19,6 @@ package gsd.buildanalysis.linux
 
 import util.parsing.combinator.{ImplicitConversions, JavaTokenParsers}
 
-/**
- * Created by IntelliJ IDEA.
- * User: berger
- * Date: 05.09.2010
- * Time: 17:54:43
- * To change this template use File | Settings | File Templates.
- */
-
 trait ExpressionParser extends JavaTokenParsers with ImplicitConversions {
 
   //Adds support to stringLiteral for escaping quotes
