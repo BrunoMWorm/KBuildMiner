@@ -35,13 +35,13 @@ class PCDerivationTest extends FunSuite with TreeHelper{
         + obj3.o [defined(obj3)]
       + obj1.o
    */
-        val ch2 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, None, None ) ) ::
-                  BNode( ObjectBNode, Nil, Some( Defined( Identifier("obj3") ) ), ObjectDetails( "obj3", None, "o", false, Some( "obj3.c" ), None ) ) ::
+        val ch2 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, "obj", None, None ) ) ::
+                  BNode( ObjectBNode, Nil, Some( Defined( Identifier("obj3") ) ), ObjectDetails( "obj3", None, "o", false, "obj", Some( "obj3.c" ), None ) ) ::
                   Nil
-      val ch1N1 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, None, None ) )
-      val ch1N2 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj2", None, "o", false, Some("obj2.c"), None ) )
+      val ch1N1 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, "obj", None, None ) )
+      val ch1N2 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj2", None, "o", false, "obj", Some("obj2.c"), None ) )
       val ch1N3 = BNode( MakefileBNode, ch2, Some( Defined( Identifier("MF2") ) ), MakefileDetails("/MF1/MF2") )
-      val ch1N4 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, None, None ) )
+      val ch1N4 = BNode( ObjectBNode, Nil, None, ObjectDetails( "obj1", None, "o", false, "obj", None, None ) )
     val ch1 = ch1N1 :: ch1N2 :: ch1N3 :: ch1N4 :: Nil
   val mf1 = BNode( MakefileBNode, ch1, Some( Defined( Identifier("MF1") ) ), MakefileDetails("/MF1") )
   val ast1 = BNode( RootNode, mf1 :: Nil, None, NoDetails )

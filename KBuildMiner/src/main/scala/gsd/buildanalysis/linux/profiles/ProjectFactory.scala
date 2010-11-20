@@ -14,18 +14,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package gsd.buildanalysis.linux.test
+package gsd.buildanalysis.linux.profiles
 
-import org.scalatest.FunSuite
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import gsd.buildanalysis.linux.Project
 
-@RunWith(classOf[JUnitRunner])
-class FuzzyParserTest extends FunSuite{
+/**
+ * Created by IntelliJ IDEA.
+ * User: berger
+ * Date: 09.11.2010
+ * Time: 12:40:12
+ * To change this template use File | Settings | File Templates.
+ */
 
-  test("placeholder"){
-    // to be implemented...
-    assert( true )
+object ProjectFactory{
+
+  val linux = """(?i)^.*linux.*$""".r
+  val busybox = """(?i)^.*busybox.*$""".r
+
+  def newProject( basedir: String ): Project = {
+    basedir match{
+      case linux() => new LinuxProject( basedir )
+      case busybox() => new BusyBoxProject( basedir )
+      case _ => Predef.error( "Unknown project in: " + basedir )
+    }
   }
 
 }

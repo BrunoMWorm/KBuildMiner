@@ -76,13 +76,13 @@ sealed case class NodeLoc(node: BNode, path: NodePath){
 
   /**
   * Insert a node to the left of this node's children and return the
-  * modified version of this location.
+  * modified version of this location (of this node, not of the new child).
   */
   final def \+: (n: BNode) = setChildren( n :: node.subnodes )
 
   /**
   * Insert the given node to the right of this node's children and return the
-  * modified version of this location.
+  * modified version of this location (of this node, not of the new child).
   */
   final def :\+ (n: BNode) = setChildren( node.subnodes ::: ( n :: Nil ) )
 

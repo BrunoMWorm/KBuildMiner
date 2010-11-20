@@ -1,4 +1,4 @@
-                                                         /*
+/*
  * Copyright (c) 2010 Thorsten Berger <berger@informatik.uni-leipzig.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -78,14 +78,33 @@ UnsupportedRegocnizedIFEQ
      System.out.println("found unsupported, but recognized and irrelevant ifeq: " + $name.text + "=" + $v.text );
      }
   ;
+  
+// some heuristics...
+ComplicatedIFNEQ1
+  : 'ifneq ($(lib-y),)'
+     {
+     modelFactory.pushIf( new UnknownExpression( new Not( new Eq( new Identifier( "lib-y" ), new StringLiteral( "" ) ) ) ) );
+     }
+   ;
+
+  
 UnsupportedIFEQ
   : 'ifeq'
-     { throw new RuntimeException("found unsupported ifeq!" );}
+     {
+     modelFactory.pushIf( new InvalidExpression() );
+     System.out.println( "found unsupported ifeq!" );
+     //throw new RuntimeException("found unsupported ifeq!" );
+     }
    ;
 UnsupportedIFNEQ
   : 'ifneq'
-     {throw new RuntimeException("found unsupported ifneq!" );}
+     {
+     modelFactory.pushIf( new InvalidExpression() );
+     System.out.println( "found unsupported ifneq! Maybe we can resolve it later with some heuristics" );
+     //throw new RuntimeException("found unsupported ifeq!" );
+     }
    ;
+   
 UnsupportedRegocnizedIFDEF
   : 'ifdef' WS name=NA CR
      {
@@ -95,7 +114,11 @@ UnsupportedRegocnizedIFDEF
   ;
 UnsupportedIFDEF
   : 'ifdef'
-     {throw new RuntimeException("found unsupported ifdef!" );}
+     {
+     modelFactory.pushIf( new InvalidExpression() );
+     System.out.println( "found unsupported ifdef!" );
+     //throw new RuntimeException("found unsupported ifeq!" );
+     }
    ;
    
 ELSE
@@ -112,7 +135,7 @@ ENDIF
      modelFactory.popEndIf();
      System.out.println("found endif");
      }
-  ;
+  ;   
 
 
 LISTROW
@@ -136,9 +159,9 @@ LISTROW
         boolean generated = object.startsWith( "<generated>" );
 	String objectFile = object.substring( generated ? 11 : 0, object.length()-2 );
 	if( currentSelection != null )
-          modelFactory.addObject( objectFile, currentSelection, "o", generated, exp );
+          modelFactory.addObject( objectFile, currentSelection, "o", generated, currentListName, exp );
         else
-          modelFactory.addObject( objectFile, "o", generated, exp );
+          modelFactory.addObject( objectFile, "o", generated, currentListName, exp );
       }
       for( String folder : elements_folders )
         modelFactory.addMakefile( folder, exp );
@@ -152,11 +175,15 @@ LISTROW
       // mounts-$(CONFIG_BLK_DEV_RAM)  += do_mounts_rd.o
       // we deal with the first case here:
       for( String var : elements_variables ){
-        if( !var.endsWith( "-y" ) && !var.endsWith( "-m" ) )
-          throw new RuntimeException( "Invalid reference: " + var );
-        String variable = var.substring( 0, var.length() - 2 );
-        String selectionSuffix = var.substring( var.length() - 1, var.length() );
-        modelFactory.addTempReference( variable, selectionSuffix, exp );
+//        if( !var.endsWith( "-y" ) && !var.endsWith( "-m" ) )
+//          throw new RuntimeException( "Invalid reference: " + var );
+	if( var.endsWith("-y") || var.endsWith("-m") ){
+	        String variable = var.substring( 0, var.length() - 2 );
+	        String selectionSuffix = var.substring( var.length() - 1, var.length() );
+	        modelFactory.addTempReference( variable, selectionSuffix, exp );
+        }else{ // arbitrary variable
+        	modelFactory.addVariableReference( var, exp );
+        }
       }
       
     }else{  // composite list
@@ -174,7 +201,7 @@ LISTROW
       for( String object : elements_objects ){
         boolean generated = object.startsWith( "<generated>" );
         String objectFile = object.substring( generated ? 11 : 0, object.length()-2 );
-        modelFactory.addObject( objectFile, "o", generated, exp );
+        modelFactory.addObject( objectFile, "o", generated, currentListName, exp );
         // extension enforced by lexer rule OBJECTFILENAME
         //
         // the actual object files of composite objects are always built into the composite object, i.e. they don't determine if they're built as
@@ -187,11 +214,15 @@ LISTROW
         
       // for variable problematice, see above
       for( String var : elements_variables ){
-        if( !var.endsWith( "-y" ) && !var.endsWith( "-m" ) )
-          throw new RuntimeException( "Invalid reference: " + var );
-        String variable = var.substring( 0, var.length() - 2 );
-	String selectionSuffix = var.substring( var.length() - 1, var.length() );
-        modelFactory.addTempReference( variable, selectionSuffix, exp );
+//        if( !var.endsWith( "-y" ) && !var.endsWith( "-m" ) )
+//          throw new RuntimeException( "Invalid reference: " + var );
+	if( var.endsWith("-y") || var.endsWith("-m") ){
+	        String variable = var.substring( 0, var.length() - 2 );
+	        String selectionSuffix = var.substring( var.length() - 1, var.length() );
+	        modelFactory.addTempReference( variable, selectionSuffix, exp );
+        }else{ // arbitrary variable
+        	modelFactory.addVariableReference( var, exp );
+        }
       }
       
       modelFactory.popTempCompositeList();
@@ -222,7 +253,26 @@ ARBITRARYVARASSIGNMENT
     { vars.put( $n.text, $v.text );
     System.out.println ("Found var assignment: " + $n.text + $la.text + $v.text ); }
   ;
-  
+
+/*
+Handles the case where a variable is created that contains a list of files in order
+to be referenced somewhere else, e.g.:
+COMMON_FILES:= \
+\
+	data_skip.o \
+	data_extract_all.o \
+	data_extract_to_stdout.o
+*/
+ARBITRARYVARASSIGNMENT_AS_LIST 
+	:	WS? n=NA { modelFactory.pushListVariable( $n.text ); } la=LISTASSIGNMENT WS? (v=VA {
+		if( $v.text.endsWith(".o") )
+			modelFactory.addObjectToList( $v.text.substring( 0, $v.text.length()-2 ) );
+	} WS*)+
+	{
+	modelFactory.popListVariable();
+	System.out.println("Found another variable that contains a list"); }
+	;
+
 NA : ('A'..'Z'|'a'..'z'|'_'|'-'|'0'..'9')+ ;
 VA : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/')+ ;
 VA2 : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/'|'$'|'('|')'|'='|','|' ')+ ;

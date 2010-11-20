@@ -20,7 +20,7 @@ import kiama.rewriting.Rewriter
 import gsd.common.Logging
 import model._
 import xml.{UnprefixedAttribute, Elem, Node, XML}
-
+import java.io.File
 
 object PersistenceManager extends Rewriter with Logging{
 
@@ -44,6 +44,8 @@ object PersistenceManager extends Rewriter with Logging{
     case BNode( ObjectBNode, ch, _, _ ) => <Object>{ getXml(ch) }</Object>
     case BNode( TempReferenceBNode, ch, _, _ ) => <TempReference>{ getXml(ch) }</TempReference>
     case BNode( TempCompositeListBNode, ch, _, _ ) => <TempCompositeList>{ getXml(ch) }</TempCompositeList>
+    case BNode( VariableDefinitionBNode, ch, _, _ ) => <VariableDefinition>{ getXml(ch) }</VariableDefinition>
+    case BNode( VariableReferenceBNode, ch, _, _ ) => <VariableReference>{ getXml(ch) }</VariableReference>
     case n => Predef.error( "Unknown node: " + n )
   } ) % getDetails( bn )
 
@@ -53,14 +55,19 @@ object PersistenceManager extends Rewriter with Logging{
     case BNode( _, _, exp, details ) => m( exp, "expr" ) ++ ( details match{
       case MakefileDetails( mf ) =>
         m( mf, "path" )
-      case ObjectDetails( oF, bA, ext, gen, sF, fP ) =>
+      case ObjectDetails( oF, bA, ext, gen, lN, sF, fP ) =>
         m( oF, "objectFile" ) ++ m( bA, "builtAs" ) ++
         m( ext, "extension" ) ++ m( gen, "generated" ) ++
-        m( sF, "sourceFile" ) ++ m( fP, "fullPathToObject" )
+        m( lN, "listName" ) ++ m( sF, "sourceFile" ) ++
+        m( fP, "fullPathToObject" )
       case TempReferenceDetails( v, sS ) =>
         m( v, "variable" ) ++ m( sS, "selectionSuffix" )
       case TempCompositeListDetails( lN, s ) =>
         m( lN, "listName" ) ++ m( s, "suffix" )
+      case VariableReferenceDetails( varName ) =>
+        m( varName, "varName" )
+      case VariableDefinitionDetails( varName ) =>
+        m( varName, "varName" )
       case _ => Map.empty
     } )
   }
@@ -75,15 +82,29 @@ object PersistenceManager extends Rewriter with Logging{
     case _ => Map[String,String]( label -> v.toString )
   }
 
+  def loadManualPCs( f: String ): Map[String,Expression] = {
+    var ret = Map[String,Expression]()
+    val file = new File( f )
+    val xml = XML loadFile file
+    for( x <- xml.child )
+      x match{
+        case <pc><f>{file}</f><e>{expr}</e></pc> =>
+          ret += ( file.text -> ExpressionParser.parseString( expr.text ) )
+      }
+    ret
+  }
+
   /**
    * pretty print expression
    */
   def pp( e: Expression ): String = e match{
     case BinaryExpression( a, b, s )  => "(" + pp(a) + " " + s + " " + pp(b) + ")"
     case UnaryExpression( a, s )      => s + pp(a)
+    case UnknownExpression( e )       => "Unknown(" + pp(e) + ")"
 
     case Identifier( i )              => i
-    case Defined( id )                => "defined(" + pp( id ) + ")"
+    case Defined( id )                => pp( id )
+//    case Defined( id )                => "defined(" + pp( id ) + ")"
     case IntLiteral( v )              => v toString
     case StringLiteral( v )           => "\"" + v + "\""
 

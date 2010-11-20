@@ -17,10 +17,9 @@
 package gsd.buildanalysis.linux.model
 
 import gsd.common.Logging
-import gsd.buildanalysis.linux.{Expression, Project}
+import gsd.buildanalysis.linux.{ExpressionUtils, Expression, Project}
 
-
-class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging{
+class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging with ExpressionUtils{
 
   val makefilePath = currentMakefileNode match{
     case BNode( MakefileBNode, _, _, MakefileDetails( m ) ) => m
@@ -57,22 +56,22 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging{
     }
   }
 
-  def addObject( objectFile: String, built_as: String, extension: String, generated: Boolean, exp: Expression ){
+  def addObject( objectFile: String, built_as: String, extension: String, generated: Boolean, listName: String, exp: Expression ){
     trace( "addObject" )
     currentLoc = currentLoc :\+ BNode( ObjectBNode, List(), Some( exp ),
-      ObjectDetails( objectFile, Some( built_as ), extension, generated, None, None ) )
+      ObjectDetails( objectFile, Some( built_as ), extension, generated, listName, None, None ) )
   }
 
-  def addObject( objectFile: String, extension: String, generated: Boolean, exp: Expression ){
+  def addObject( objectFile: String, extension: String, generated: Boolean, listName: String, exp: Expression ){
     trace( "addObject" )
     currentLoc = currentLoc :\+ BNode( ObjectBNode, List(), Some( exp ),
-      ObjectDetails( objectFile, None, extension, generated, None, None ) )
+      ObjectDetails( objectFile, None, extension, generated, listName, None, None ) )
   }
 
   def addMakefile( folder: String, exp: Expression ){
     trace( "addMakefile" )
     currentLoc = currentLoc :\+ BNode( MakefileBNode, List(), Some( exp ),
-      MakefileDetails( proj.lookupMakefile( makefilePath, folder ) ) )
+      MakefileDetails( proj.lookupSubMakefile( makefilePath, folder ) ) )
   }
 
   def addTempReference( variable: String, selectionSuffix: String, exp: Expression ){
@@ -96,6 +95,34 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging{
     // all elements will be nested under this one, until we're done with parsing this list
     // (and call popTempCompositeList), thus, we set the focus down to the new node
   }
+
+  def addVariableReference( varName: String, exp: Expression ){
+    trace( "addVariableReference" )
+    currentLoc = currentLoc :\+ BNode( VariableReferenceBNode, List(), Some( exp ),
+      VariableReferenceDetails( varName ) )
+  }
+
+  def pushListVariable( varName: String ){
+    trace( "pushListVariable: " + varName )
+    // add new IfNode and set the focus to it
+    currentLoc = ( currentLoc :\+ BNode( VariableDefinitionBNode, List(), None,
+      VariableDefinitionDetails( varName ) ) ).downLastOp.get
+    trace( "currentLoc=" + currentLoc.node.ntype )
+  }
+
+  def addObjectToList( name: String ){
+    trace( "addObjectToList: " + name )
+//    assert( currentLoc.node.ntype == VariableDefinitionBNode )
+    val listName = currentLoc.node.details match{
+      case VariableDefinitionDetails( vN ) => vN
+      case _ => Predef.error( "Current node is not a list, i.e. a variable definition" )
+    }
+    currentLoc = currentLoc :\+ BNode( ObjectBNode, List(), Some( TRUE ),
+      ObjectDetails( name, None, "o", false, listName, None, None ) )
+  }
+
+  def popListVariable = { trace("popListVariable"); pop }
+
 
   def root = currentLoc.top.node
 

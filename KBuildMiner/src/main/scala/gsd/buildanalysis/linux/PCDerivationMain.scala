@@ -27,7 +27,7 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
   def calculatePCs( tree: BNode ): Map[String,Expression] = {
 
     val objectFiles = collectl{
-      case b@BNode( _, _, _, ObjectDetails( _, _, _, _, Some( sF ), _ ) ) => b
+      case b@BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => b
     }(tree)
 
     var ret = Map[String,Expression]()
@@ -130,6 +130,17 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
 
   private def node2String( b: BNode ) =
     b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString
+
+  val resolveUnknownExpressions = everywheretd{
+    rule{
+      case b@BNode( IfBNode, _, Some(
+        UnknownExpression( Not( Eq( Identifier( i ), StringLiteral( "" ) ) ) )
+      ), _ ) if( i endsWith "-y" ) => {
+        val listName = i.substring( 0, i.length - 2 )
+        TRUE
+      }
+    }
+  }
 
 //  def moveUpStrategy( s: => ForkableStrategy ): Strategy =
 //    new Strategy {

@@ -21,6 +21,7 @@ import model._
 import gsd.common.Logging
 import org.antlr.runtime.{CommonTokenStream, ANTLRFileStream}
 import java.io.{PrintWriter, FileWriter, File, FileReader}
+import profiles.ProjectFactory
 
 /**
  * Run the KBuild miner with this main class.
@@ -29,32 +30,43 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
   val Linux_KERNEL = "../../../workspace/codebases/linux-2.6.28.6"
   val PROPERTIES = "miner.properties"
-  val TOP_MAKEFILE_FOLDERS = "arch/x86" :: "block" :: "crypto" :: "drivers" ::
-                             "firmware" :: "fs" :: "init" :: "ipc" :: "kernel" ::
-                             "lib" :: "mm" :: "net" :: "samples" :: "security" ::
-                             "sound" :: Nil
-  val Manual_PCs = "override/linux-2.6.28.6/manual_presence_conditions.xml"
-  val OVERRIDE_Folder = "override/linux-2.6.28.6"
 
   val AST_OUTPUT = "output/makefile_tree.xml"
   val PC_OUTPUT = "output/presence_conditions.txt"
 
+  /**
+   * Part of the API, to be used by other projects. Tries to identify the
+   * type of project in the given folder and to calculate PCs of each file.
+   * @return boolean PCs
+   */
+  def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
+    val p = ProjectFactory.newProject( codebase )
+    val ast = buildAST( p )
+    val pcs = PCDerivationMain calculatePCs ast
+    val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
+    Map( boolPCs: _* )
+  }
+
+  private val toBoolean = everywherebu{
+    rule{
+      case Or( Eq(Identifier(a),StringLiteral("y")), Eq(Identifier(b),StringLiteral("m")) ) if a==b =>
+        Defined(Identifier(a))
+      case UnknownExpression( e ) => False()
+      case InvalidExpression => False()
+    }
+  }
 
   def main( codebase: Option[String],
             astOutput: Option[String],
             pcOutput: Option[String],
-            overrideFolder: Option[String],
-            manualPCs: Option[String],
             saveAST: Option[String] ){
 
     val _codebase   = getArg( codebase, "codebase", Linux_KERNEL )
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
-    val _overrideFolder = getArg( overrideFolder, "overrideFolder", OVERRIDE_Folder )
-    val _manualPCs  = getArg( manualPCs, "manualPCs", Manual_PCs )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
-    val p = new Project( _codebase, _overrideFolder )
+    val p = ProjectFactory.newProject( _codebase )
     new File( "output/logs" ) mkdirs
 
     info( "Starting KBuildMiner..." )
@@ -80,7 +92,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       case None       => getProperty( name, default )
     }
 
-  def getProperty( id: String, default: String ): String = {
+  private def getProperty( id: String, default: String ): String = {
     if( new File( PROPERTIES ).exists ){
       val props = new Properties
       // would rather like to use getClass.getResourceAsStream, but would need to
@@ -98,8 +110,8 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   }
 
   private def buildAST( proj: Project ) =
-    BNode( RootNode, TOP_MAKEFILE_FOLDERS.map{
-      f => processMakefile( f + "/Makefile", Some( True() ), proj )
+    BNode( RootNode, proj.getTopMakefileFolders.map{
+      f => processMakefile( proj.findMakefile(f).get, Some( True() ), proj )
     }, None, NoDetails )
 
 
@@ -128,9 +140,9 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     // set source file
     val setSourceFileRule = everywheretd{
       rule{
-        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, None, fP ) ) =>
+        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, None, fP ) ) =>
           BNode( ObjectBNode, ch, exp,
-            ObjectDetails( oF, bA, ext, gen, proj.getSource( b, oF, gen ), fP ) )
+            ObjectDetails( oF, bA, ext, gen, lN, proj.getSource( b, oF, gen ), fP ) )
       }
     }
     // descend into and process the sub makefiles
@@ -162,14 +174,6 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   val postProcessingRule = everywheretd{
     rule{
       case BNode( t, ch, e, d ) => {
-//          var mMap = ch.foldLeft( Map[String, List[BNode]]() )( (map,b) => b match{
-//            case BNode( MakefileBNode, _, _, MakefileDetails(mf) ) => map.get(mf) match{
-//              case Some( s ) => map + ( mf -> ( b :: s ) )
-//              case None => map + ( mf -> b )
-//            }
-//            case _ => map
-//          })
-
         var skip = Set[BNode]()
 
         val new_children = ch.flatMap( _ match{
@@ -189,12 +193,12 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
             }
           }
 
-          case b@BNode( ObjectBNode, children, Some(exp), od@ObjectDetails( of, _, _, _, _, _ ) ) => {
+          case b@BNode( ObjectBNode, children, Some(exp), od@ObjectDetails( of, _, _, _, _, _, _ ) ) => {
             if( skip contains b )
               Nil
             else{
               val all = ch.filter( _ match{
-                case BNode(_,_,_, ObjectDetails( o, _, _, _, _, _ ) ) if o==of => true
+                case BNode(_,_,_, ObjectDetails( o, _, _, _, _, _, _ ) ) if o==of => true
                 case _ => false
               })
               val new_exp = all.map( _.exp.get ).reduceLeft[Expression]( _ | _ )

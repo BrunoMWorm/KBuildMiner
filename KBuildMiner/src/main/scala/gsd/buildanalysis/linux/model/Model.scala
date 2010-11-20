@@ -33,8 +33,10 @@ case class BNode( ntype: BNodeType,
   override def toString = this match{
     case BNode( RootNode, _, _, _ ) => "[root]"
     case BNode( _, _, _, MakefileDetails(m) ) => "[Makefile: " + m + "]"
-    case BNode( _, _, _, ObjectDetails(oF,_,_,_,_,_) ) => "[Object: " + oF + "]"
+    case BNode( _, _, _, ObjectDetails(oF,_,_,_,_,_,_) ) => "[Object: " + oF + "]"
     case BNode( _, _, _, SourceFileDetails(f) ) => "[SourceFile: " + f + "]"
+    case BNode( _, _, _, VariableDefinitionDetails(v) ) => "[VariableDefinition: " + v + "]"
+    case BNode( _, _, _, VariableReferenceDetails(v) ) => "[VariableReference: " + v + "]"
     case _ => super.toString
   }
 
@@ -43,12 +45,23 @@ case class BNode( ntype: BNodeType,
 sealed abstract class BNodeType
 
 case object RootNode extends BNodeType
+case object MainListNode extends BNodeType
 case object IfBNode extends BNodeType
 case object MakefileBNode extends BNodeType
 case object ObjectBNode extends BNodeType
 case object TempCompositeListBNode extends BNodeType
 case object TempReferenceBNode extends BNodeType
 case object SourceFileBNode extends BNodeType
+
+/**
+ * other variables that define lists of objects
+ */
+case object VariableDefinitionBNode extends BNodeType
+/**
+ * arbitrary variables that get referenced
+ */
+case object VariableReferenceBNode extends BNodeType
+
 
 sealed abstract class BNodeDetails
 
@@ -58,6 +71,7 @@ case class ObjectDetails( objectFile: String,
                           built_as: Option[String],
                           extension: String,
                           generated: Boolean,
+                          addedByList: String,
                           sourceFile: Option[String],
                           fullPathToObject: Option[String] ) extends BNodeDetails
 
@@ -70,6 +84,10 @@ case class TempCompositeListDetails( listName: String,
                                      suffix: Option[String] ) extends BNodeDetails
 
 case class SourceFileDetails( file: String ) extends BNodeDetails
+
+case class VariableReferenceDetails( varName: String ) extends BNodeDetails
+
+case class VariableDefinitionDetails( varName: String ) extends BNodeDetails
 
 /**
  * Attribute grammar implementation...
@@ -102,9 +120,13 @@ trait TreeHelper extends Rewriter with Logging{
         val referenceNodes = findTempReferenceNodes( ln, b->mfScope )
         compositeObjects ::: referenceNodes
       }
+      case b@BNode( VariableDefinitionBNode, _, _, VariableDefinitionDetails( vN ) ) =>{
+        trace("trying to find variable refernce, var: " + vN )
+        scopedCollectl{
+          case b@BNode( VariableReferenceBNode, _, _, VariableReferenceDetails( vRN ) ) if vN == vRN => b
+        }( b->mfScope )
+      }
       case b:BNode =>{
-        if( b.parent[BNode] == null )
-          println( "parent is null at: " + node2String(b) )
         trace( "parent of " + node2String(b) + " is: " + node2String(b.parent[BNode])  )
         b.parent[BNode] :: Nil
       }
@@ -116,7 +138,7 @@ trait TreeHelper extends Rewriter with Logging{
   def findCompositeObjectNodes( listName: String, scope: BNode ): List[BNode] ={
     trace("trying to find comp. object node, list: " + listName )
     scopedCollectl{
-      case b@BNode( ObjectBNode, _, _, ObjectDetails( oF, _, _, false, None, _ ) ) if oF == listName => b
+      case b@BNode( ObjectBNode, _, _, ObjectDetails( oF, _, _, false, _, None, _ ) ) if oF == listName => b
     }( scope )
   }
 
@@ -139,7 +161,7 @@ trait TreeHelper extends Rewriter with Logging{
     }( scope )
 
   def getSourceFile( b: BNode ) = b match{
-    case BNode( _, _, _, ObjectDetails( _, _, _, _, Some( sF ), _ ) ) => sF
+    case BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => sF
     case _ => Predef.error( "Not an ObjectBNode with an associated source file!" )
   }
 

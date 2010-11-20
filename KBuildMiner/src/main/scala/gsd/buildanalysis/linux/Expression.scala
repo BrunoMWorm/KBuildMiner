@@ -38,6 +38,18 @@ sealed abstract class Expression{
 
 }
 
+/**
+ * Denotes expressions that are either invalid or the parser
+ * doesn't recognize them.
+ */
+case class InvalidExpression() extends Expression
+
+/**
+ * Denotes expressions that we might be able to
+ * resolve later with heuristics
+ */
+case class UnknownExpression( e: Expression ) extends Expression
+
 case class Identifier( name: String ) extends Expression
 case class StringLiteral(value : String) extends Expression
 case class IntLiteral(value : Int) extends Expression
