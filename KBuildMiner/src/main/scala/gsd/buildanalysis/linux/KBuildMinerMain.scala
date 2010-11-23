@@ -19,9 +19,9 @@ package gsd.buildanalysis.linux
 import java.util.Properties
 import model._
 import gsd.common.Logging
-import org.antlr.runtime.{CommonTokenStream, ANTLRFileStream}
 import java.io.{PrintWriter, FileWriter, File, FileReader}
 import profiles.ProjectFactory
+import org.antlr.runtime.{ANTLRInputStream, CommonTokenStream, ANTLRFileStream}
 
 /**
  * Run the KBuild miner with this main class.
@@ -42,18 +42,9 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
     val p = ProjectFactory.newProject( codebase )
     val ast = buildAST( p )
-    val pcs = PCDerivationMain calculatePCs ast
+    val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
     val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
     Map( boolPCs: _* )
-  }
-
-  private val toBoolean = everywherebu{
-    rule{
-      case Or( Eq(Identifier(a),StringLiteral("y")), Eq(Identifier(b),StringLiteral("m")) ) if a==b =>
-        Defined(Identifier(a))
-      case UnknownExpression( e ) => False()
-      case InvalidExpression => False()
-    }
   }
 
   def main( codebase: Option[String],
@@ -66,7 +57,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
-    val p = ProjectFactory.newProject( _codebase )
+    val p = ProjectFactory newProject _codebase
     new File( "output/logs" ) mkdirs
 
     info( "Starting KBuildMiner..." )
@@ -76,7 +67,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     if( _saveAST == "true" )
       PersistenceManager.outputXML( ast, _astOutput )
 
-    val pcs = PCDerivationMain calculatePCs ast
+    val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
     val out = new PrintWriter( new FileWriter( PC_OUTPUT ) )
     pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
       out.println( name + ": " + PersistenceManager.pp( rewrite( removeCONFIG_Prefix)( pc ) ) )
@@ -103,11 +94,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       default
   }
 
-  private val removeCONFIG_Prefix = everywheretd{
-    rule{
-      case Identifier( i ) if i startsWith "CONFIG_" => Identifier( i substring 7 )
-    }
-  }
+
 
   private def buildAST( proj: Project ) =
     BNode( RootNode, proj.getTopMakefileFolders.map{
@@ -126,7 +113,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
     info( "=== Processing " + mf )
 
-    val input = new ANTLRFileStream( proj.getHandle( mf ).getAbsolutePath )
+    val input = new ANTLRInputStream( proj getStreamHandle mf )
     val lex = new FuzzyMakefileLexer( input )
     lex.setModelFactory( factory )
 

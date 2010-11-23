@@ -18,7 +18,7 @@ package gsd.buildanalysis.linux.profiles
 
 import gsd.buildanalysis.linux.model.{BNode, MakefileDetails, TreeHelper}
 import java.io.File
-import gsd.buildanalysis.linux.{Expression, Project}
+import gsd.buildanalysis.linux.{PersistenceManager, Expression, Project}
 
 class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper{
 
@@ -26,14 +26,14 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
                              "firmware" :: "fs" :: "init" :: "ipc" :: "kernel" ::
                              "lib" :: "mm" :: "net" :: "samples" :: "security" ::
                              "sound" :: Nil
-  val Manual_PCs = "override/linux-2.6.28.6/manual_presence_conditions.xml"
-
-  val OVERRIDE_Folder = "override/linux-2.6.28.6"
 
   def getTopMakefileFolders: List[String] = TOP_MAKEFILE_FOLDERS
 
-  def getOverrideFolder = OVERRIDE_Folder
+  def getLocalOverrideFolder = "/override/linux-2.6.28.6"
 
+  def getManualPCs: Map[String,Expression] =
+    PersistenceManager loadManualPCs getClass.getResourceAsStream( "/override/linux-2.6.28.6_pcs.xml" )
+  
   def lookupSubMakefile( currentMakefile: String, relativePath: String): String = {
 
     val rp = if( currentMakefile.startsWith("arch/x86/") &&
@@ -89,7 +89,5 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
     }
 
   }
-
-  def getManualPCs: Map[String,Expression] = Map()
 
 }

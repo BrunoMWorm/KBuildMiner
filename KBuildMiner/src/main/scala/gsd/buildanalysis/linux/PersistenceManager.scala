@@ -20,7 +20,7 @@ import kiama.rewriting.Rewriter
 import gsd.common.Logging
 import model._
 import xml.{UnprefixedAttribute, Elem, Node, XML}
-import java.io.File
+import java.io.{InputStream, File}
 
 object PersistenceManager extends Rewriter with Logging{
 
@@ -82,14 +82,16 @@ object PersistenceManager extends Rewriter with Logging{
     case _ => Map[String,String]( label -> v.toString )
   }
 
-  def loadManualPCs( f: String ): Map[String,Expression] = {
+  def loadManualPCs( is: InputStream ): Map[String,Expression] = {
     var ret = Map[String,Expression]()
-    val file = new File( f )
-    val xml = XML loadFile file
+//    val file = new File( f )
+    val xml = XML load is
+//    val xml = XML loadFile file
     for( x <- xml.child )
       x match{
-        case <pc><f>{file}</f><e>{expr}</e></pc> =>
-          ret += ( file.text -> ExpressionParser.parseString( expr.text ) )
+        case <pc>{ _* }</pc> =>
+          ret += ( (x\"f").text -> ExpressionParser.parseString( (x\"e").text ) )
+        case _ => ;
       }
     ret
   }

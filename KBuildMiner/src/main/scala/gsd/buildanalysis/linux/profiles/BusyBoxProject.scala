@@ -33,7 +33,7 @@ class BusyBoxProject( basedir: String ) extends Project( basedir ) with TreeHelp
 
   def getTopMakefileFolders: List[String] = TOP_MAKEFILE_FOLDERS
 
-  def getOverrideFolder = OVERRIDE_Folder
+  def getLocalOverrideFolder = OVERRIDE_Folder
 
   def lookupSubMakefile( currentMakefile: String, relativePath: String): String = {
 
@@ -83,6 +83,6 @@ class BusyBoxProject( basedir: String ) extends Project( basedir ) with TreeHelp
   }
 
   def getManualPCs: Map[String,Expression] =
-    PersistenceManager loadManualPCs "override/busybox_pcs.xml"
+    PersistenceManager loadManualPCs getClass.getResourceAsStream( "/override/busybox_pcs.xml" )
 
 }

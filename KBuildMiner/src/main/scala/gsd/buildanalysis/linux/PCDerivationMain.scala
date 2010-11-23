@@ -24,34 +24,13 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
 
   case class Path( children: List[Path], node: BNode, name: String )
 
-  def calculatePCs( tree: BNode ): Map[String,Expression] = {
+  def calculatePCs( tree: BNode, manualPCs: Map[String,Expression] ): Map[String,Expression] = {
 
     val objectFiles = collectl{
       case b@BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => b
     }(tree)
 
     var ret = Map[String,Expression]()
-
-//    val sourceFiles = collects{
-//      case ObjectDetails( _, _, _, _, Some( sF ), _ ) =>
-//        (sF, BNode( SourceFileBNode, List(), None, SourceFileDetails( sF ) ) )
-//    }(tree)
-//
-//    val paths = sourceFiles map{ case (sf, sfNode) => {
-//        val ch = List flatten collectl{
-//          case b@BNode( _, _, _, ObjectDetails( _, _, _, _, Some( name ), _ ) ) if name == sf =>{
-//            moveUpStrategy()(b) match{
-//              case Some( p: Path ) => p :: Nil
-//              case None => Nil
-//            }
-//          }
-//        }(tree)
-//
-//        Path( ch, sfNode, sf )
-//      }
-//    }
-//
-//    val ret = paths map ( p => ( p.name, path2Exp( p ) ) )
 
     for( o <- objectFiles ){
 
@@ -72,6 +51,9 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
       }
 
     }
+
+    // add manual PCs (or override derived ones with them)
+    ret ++= manualPCs
 
     // finally, try to simplify all expressions
     Map( ret.map{ case (a,b) => ( a, simplify(b) ) }.toList: _* )

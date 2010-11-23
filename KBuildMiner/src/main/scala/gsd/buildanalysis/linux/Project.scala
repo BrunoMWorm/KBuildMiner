@@ -16,21 +16,21 @@
  */
 package gsd.buildanalysis.linux
 
-import java.io.File
 import model.BNode
+import java.io.{FileInputStream, InputStream, File}
 
 abstract class Project( val basedir: String ){
 
   def getTopMakefileFolders: List[String]
 
-  protected def getOverrideFolder: String
+  protected def getLocalOverrideFolder: String
 
-  def getHandle( relativePathToMakefile: String ): File = {
-    var checkOverride = new File( getOverrideFolder + "/" + relativePathToMakefile )
-    if( checkOverride exists )
-      return checkOverride
+  def getStreamHandle( relativePathToMakefile: String ): InputStream = {
+    val checkOverride = getClass.getResourceAsStream( getLocalOverrideFolder + "/" + relativePathToMakefile )
+    if( checkOverride != null )
+      checkOverride
     else
-      return new File( basedir + "/" + relativePathToMakefile )
+      new FileInputStream( basedir + "/" + relativePathToMakefile )
   }
 
   def lookupSubMakefile( currentMakefile: String, relativePath: String): String
@@ -47,8 +47,6 @@ abstract class Project( val basedir: String ){
         None
     }
   }
-
-//  val newPath = basedir + "/" + currentFolder + "/" + rp
 
   /**
    * Lookup source file of object node

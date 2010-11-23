@@ -22,6 +22,21 @@ import gsd.common.Logging
 
 trait BuildMinerCommons extends Rewriter with Logging{
 
+  val toBoolean = everywherebu{
+    rule{
+      case Or( Eq(Identifier(a),StringLiteral("y")), Eq(Identifier(b),StringLiteral("m")) ) if a==b =>
+        Defined(Identifier(a))
+      case UnknownExpression( e ) => False()
+      case InvalidExpression => False()
+    }
+  }
+
+  val removeCONFIG_Prefix = everywheretd{
+    rule{
+      case Identifier( i ) if i startsWith "CONFIG_" => Identifier( i substring 7 )
+    }
+  }
+
   /**
    * This method handles some special function calls appearing in some Makefiles, e.g. in /sound/synth/emux/Makefile:
    * the sequencer function is defined:
