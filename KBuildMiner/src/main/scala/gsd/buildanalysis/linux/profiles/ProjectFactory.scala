@@ -19,13 +19,8 @@ package gsd.buildanalysis.linux.profiles
 import gsd.buildanalysis.linux.Project
 
 /**
- * Created by IntelliJ IDEA.
- * User: berger
- * Date: 09.11.2010
- * Time: 12:40:12
- * To change this template use File | Settings | File Templates.
+ * Tries to identify the target project and instantiates an appropriate Project class.
  */
-
 object ProjectFactory{
 
   val linux = """(?i)^.*linux.*$""".r

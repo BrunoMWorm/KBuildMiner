@@ -36,7 +36,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
   /**
    * Part of the API, to be used by other projects. Tries to identify the
-   * type of project in the given folder and to calculate PCs of each file.
+   * type of project in the given folder and calculates PCs for each file.
    * @return boolean PCs
    */
   def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
@@ -68,13 +68,13 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       PersistenceManager.outputXML( ast, _astOutput )
 
     val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
-    val out = new PrintWriter( new FileWriter( PC_OUTPUT ) )
+    val out = new PrintWriter( new FileWriter( _pcOutput ) )
+    info( "Saving PCs to: " + _pcOutput )
     pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
       out.println( name + ": " + PersistenceManager.pp( rewrite( removeCONFIG_Prefix)( pc ) ) )
     }
     out close
 
-    println
   }
 
   private def getArg[T]( arg: Option[T], name:String, default: String ): String =

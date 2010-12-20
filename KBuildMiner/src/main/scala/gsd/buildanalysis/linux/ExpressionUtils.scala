@@ -62,7 +62,6 @@ trait ExpressionUtils extends Rewriter{
 
       case Or( Not( a ), b ) if a == b => True()
       case Or( a, Not( b ) ) if a == b => True()
-//      case Or( a, b ) if( )
 
 
       case Implies( a, True() )             => True()

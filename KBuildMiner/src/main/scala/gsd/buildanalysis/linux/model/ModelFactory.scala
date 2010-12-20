@@ -112,7 +112,7 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
 
   def addObjectToList( name: String ){
     trace( "addObjectToList: " + name )
-//    assert( currentLoc.node.ntype == VariableDefinitionBNode )
+    assert( currentLoc.node.ntype == VariableDefinitionBNode )
     val listName = currentLoc.node.details match{
       case VariableDefinitionDetails( vN ) => vN
       case _ => Predef.error( "Current node is not a list, i.e. a variable definition" )

@@ -37,7 +37,7 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
       val oF = getSourceFile( o )
       debug( "Trying to find path for: " + o )
 
-      moveUpStrategy()(o) match{
+      moveUpStrategy(o) match{
         case Some( p: Path ) => {
           debug( "...path found!" )
           val exp = path2Exp( p )
@@ -76,7 +76,7 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
   }
 
 
-  def moveUpStrategy(): Strategy = moveUpStrategy( Set[Term]() )
+  def moveUpStrategy: Strategy = moveUpStrategy( Set[Term]() )
 
   def moveUpStrategy( cache: Set[Term] ): Strategy = new Strategy{
 
@@ -88,6 +88,8 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
         t match{
           case b:BNode =>
             trace( "moveUpStrategy: visiting " + node2String(b) )
+          case x =>
+            Predef.error("Unexpected: " + x )
         }
 
         t match{
@@ -113,6 +115,7 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
   private def node2String( b: BNode ) =
     b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString
 
+  // TODO: FIXME
   val resolveUnknownExpressions = everywheretd{
     rule{
       case b@BNode( IfBNode, _, Some(
@@ -123,35 +126,5 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
       }
     }
   }
-
-//  def moveUpStrategy( s: => ForkableStrategy ): Strategy =
-//    new Strategy {
-//      def apply( t: Term ): Option[Term] = {
-//        t match{
-//          case BNode( RootNode, _, _, _ ) => Some( s(t) )
-//          case b@BNode( _, _, _, _ ) => {
-//            s( b )
-////            b->moveUp match{
-////              case Nil => None
-////              case fst :: tail => {
-////                moveUpStrategy( s )( fst )
-////
-////              }
-//            val next = b->moveUp
-//            val res = next.map( s ).filter( _ == None )
-//            if( res isEmpty )
-//              None
-//            else{
-//              Path( res.map( _.get ) )
-//            }
-//
-//
-//            moveUpStrategy( s )( next.first )
-//            Some( s( t ) )
-//          }
-//        }
-//
-//      }
-//    }
 
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2010 Thorsten Berger <berger@informatik.uni-leipzig.de>
- * and Steven She <shshe@gsd.uwaterloo.ca>
+ * Copyright (c) 2010 Steven She <shshe@gsd.uwaterloo.ca>
+ * and Thorsten Berger <berger@informatik.uni-leipzig.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
