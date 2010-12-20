@@ -98,7 +98,10 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
   private def buildAST( proj: Project ) =
     BNode( RootNode, proj.getTopMakefileFolders.map{
-      f => processMakefile( proj.findMakefile(f).get, Some( True() ), proj )
+      f => proj.findMakefile(f) match{
+        case Some( mf ) => processMakefile( mf, Some( True() ), proj )
+        case None => Predef.error("No KBuild Makefile found in: " + f )
+      }
     }, None, NoDetails )
 
 

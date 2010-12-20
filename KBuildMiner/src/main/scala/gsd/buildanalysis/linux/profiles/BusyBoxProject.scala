@@ -22,7 +22,7 @@ import gsd.buildanalysis.linux.{PersistenceManager, Expression, Project}
 
 class BusyBoxProject( basedir: String ) extends Project( basedir ) with TreeHelper{
 
-  val TOP_MAKEFILE_FOLDERS = "applets" :: "archival" :: "archival/libunarchive" :: "console-tools" ::
+  val TOP_MAKEFILE_FOLDERS = "applets" :: "archival" :: "archival/libarchive" :: "console-tools" ::
                              "coreutils" :: "coreutils/libcoreutils" :: "debianutils" :: "e2fsprogs" ::
                              "editors" :: "findutils" :: "init" :: "libbb" :: "libpwdgrp" :: "loginutils" ::
                              "mailutils" :: "miscutils" :: "modutils" :: "networking" :: "networking/libiproute" ::

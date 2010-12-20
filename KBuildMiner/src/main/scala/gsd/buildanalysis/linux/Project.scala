@@ -35,17 +35,26 @@ abstract class Project( val basedir: String ){
 
   def lookupSubMakefile( currentMakefile: String, relativePath: String): String
 
+  val makefileNames = "KBuild" :: "KBuild.src" :: "Makefile" :: Nil
+
   def findMakefile( folder: String ): Option[String] ={
-    val kbuild = new File( basedir + "/" + folder + "/" + "KBuild" )
-    if( kbuild exists )
-      Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + "KBuild" )
-    else{
-      val makefile = new File( basedir + "/" + folder + "/" + "Makefile")
-      if( makefile exists )
-          Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + "Makefile" )
-      else
-        None
+    for( mf <- makefileNames ){
+      val m = new File( basedir + "/" + folder + "/" + mf )
+      if( m exists )
+        return Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + mf )
     }
+    return None
+
+//    val kbuild = new File( basedir + "/" + folder + "/" + "KBuild" )
+//    if( kbuild exists )
+//      Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + "KBuild" )
+//    else{
+//      val makefile = new File( basedir + "/" + folder + "/" + "Makefile")
+//      if( makefile exists )
+//          Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + "Makefile" )
+//      else
+//        None
+//    }
   }
 
   /**

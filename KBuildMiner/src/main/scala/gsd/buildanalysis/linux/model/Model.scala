@@ -121,7 +121,7 @@ trait TreeHelper extends Rewriter with Logging{
         compositeObjects ::: referenceNodes
       }
       case b@BNode( VariableDefinitionBNode, _, _, VariableDefinitionDetails( vN ) ) =>{
-        trace("trying to find variable refernce, var: " + vN )
+        trace("trying to find variable reference, var: " + vN )
         scopedCollectl{
           case b@BNode( VariableReferenceBNode, _, _, VariableReferenceDetails( vRN ) ) if vN == vRN => b
         }( b->mfScope )

@@ -84,9 +84,7 @@ object PersistenceManager extends Rewriter with Logging{
 
   def loadManualPCs( is: InputStream ): Map[String,Expression] = {
     var ret = Map[String,Expression]()
-//    val file = new File( f )
     val xml = XML load is
-//    val xml = XML loadFile file
     for( x <- xml.child )
       x match{
         case <pc>{ _* }</pc> =>
