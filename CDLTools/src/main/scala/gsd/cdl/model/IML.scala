@@ -61,6 +61,7 @@ case object InterfaceType extends CDLType{
 }
 
 sealed abstract class Constraint
+case class Parent( i: Identifier ) extends Constraint
 case class Requires( e : CDLExpression ) extends Constraint
 case class ActiveIf( e : CDLExpression ) extends Constraint
 case class Calculated( e : CDLExpression ) extends Constraint

@@ -22,14 +22,14 @@ package gsd.cdl
 import model._
 import util.parsing.combinator._
 
-//TODO test precedence of operations (especially conditional)
+//TODO test precedence of operations (especially of the conditional statement, which is probably wrong)
 //TODO use flatten2 for constructing expression
 trait CDLExpressionParser extends JavaTokenParsers with ImplicitConversions {
 
   //Adds support to stringLiteral for escaping quotes
   val trueExp = """true""".r ^^ ( x => True() )
   val falseExp = """false""".r ^^ ( x => False() ) 
-  val identifier = """[_a-zA-Z][-_0-9a-zA-Z]*""".r ^^ Identifier
+  val identifier = """[_a-zA-Z][_0-9a-zA-Z]*""".r ^^ Identifier
   val lit = ("\""+"""([^"\p{Cntrl}\\]|\\[\\/bfnrt"])*"""+"\"").r ^^ StringLiteral
 
   val integer : Parser[IntLiteral] =
@@ -55,12 +55,12 @@ trait CDLExpressionParser extends JavaTokenParsers with ImplicitConversions {
 
   lazy val expr : Parser[CDLExpression] = condExpr
 
+  // OR ("?" COND (":" OR) )
   lazy val condExpr : Parser[CDLExpression] =
-    orExpr ~ rep("?" ~> condExpr ~ (":" ~> orExpr)) ^^
+    orExpr ~ rep("?" ~> condExpr ~ (":" ~> condExpr)) ^^
       {
         case first~rest => (first /: rest){ case (cond, t~f) =>
           Conditional(cond, t, f)
-        }
       }
 
   lazy val orExpr : Parser[CDLExpression] =

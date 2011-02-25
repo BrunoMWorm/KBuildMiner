@@ -33,7 +33,16 @@ class CDLExpressionParserTest extends FunSuite {
 
   test( "conditionals" ){
     assert(parseString("a ? b : c") === Conditional("a", "b", "c"))
+    // TODO: the following precendence is probably wrong (check CDL manual!)
     assert(parseString("a ? b : c ? d : e") === Conditional("a", "b", Conditional("c", "d", "e")))
+    assert(parseString("a ? b : c ? d : e ? f : g") === Conditional("a", "b", Conditional("c", "d", Conditional("e","f","g" ) ) ) )
+
+    // a ? ( h ? i : j ) : ( c ? d : (e ? f : g) )
+    assert(parseString("a ?  h ? i : j  : c ? d : e ? f : g") === Conditional("a", Conditional("h","i","j"), Conditional("c", "d", Conditional("e","f","g" ) ) ) )
+  }
+
+  test("identifiers"){
+    assert( parseString("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1") === Minus( Identifier("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS"), IntLiteral(1) ) )
   }
 
   test( "inequality" ){
