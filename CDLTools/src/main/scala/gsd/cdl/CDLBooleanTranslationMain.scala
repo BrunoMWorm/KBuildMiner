@@ -162,11 +162,19 @@ object CDLBooleanTranslationMain extends IMLParser with Rewriter{
 
     // process interfaces
     val interfaceConjuncts = collectl{
-        case Node(n,InterfaceType,_,_,_,_,_,_,_,_,_,_) => {
+        case Node(n,InterfaceType,_,_,fl,_,_,_,_,_,_,_) if( fl == BoolFlavor || fl == BoolDataFlavor ) => {
           // you can only understand the following if you're stoned (or drunk, depending on your preference)
           ( n implies makeDisjunct( impls( n ) ) ) &
           ( childParentMap( n ) & constraintsPerNode( n ) & makeDisjunct( impls( n ) ) ) implies n
           
+          // FIXME: childParentMap could return none, but haven't seen any interface as top-level node so far
+        }
+        case Node(n,InterfaceType,_,_,DataFlavor,_,_,_,_,_,_,_) => {
+          // any constraint on a data interface just affects the data value and is used for grouping
+          // thus, independent of its constraints and the state of the implementors, it is always
+          // active and enabled when the parent is (mandatory) -> thus, imposing its group constraint to the model
+          ( childParentMap( n ) ) implies n
+
           // FIXME: childParentMap could return none, but haven't seen any interface as top-level node so far
         }
     }(topLevelNodes)
