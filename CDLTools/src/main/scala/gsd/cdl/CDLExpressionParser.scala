@@ -61,6 +61,7 @@ trait CDLExpressionParser extends JavaTokenParsers with ImplicitConversions {
       {
         case first~rest => (first /: rest){ case (cond, t~f) =>
           Conditional(cond, t, f)
+        }
       }
 
   lazy val orExpr : Parser[CDLExpression] =
