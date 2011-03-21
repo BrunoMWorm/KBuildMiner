@@ -95,9 +95,12 @@
           <type>jar</type>
         </dependency>
         <dependency>
+			<!-- http://github.com/paulp/optional -->
             <groupId>com.github.paulp_optional</groupId>
             <artifactId>optional</artifactId>
             <version>0.0.1</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/optional-0.0.1.jar</systemPath>
         </dependency>
     </dependencies>
 </project>
