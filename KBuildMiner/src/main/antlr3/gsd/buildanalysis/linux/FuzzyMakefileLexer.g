@@ -52,6 +52,7 @@ options { filter=true; }
   
 }
 
+fragment
 IFEQVALUE
   : 'y'|'m';
 
@@ -64,9 +65,10 @@ IFEQ
      System.out.println("found ifeq "+$name.text + " = " + value );}
    ;
 IFNEQ
-  : 'ifneq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=SELECTION WS? ')' CR
+  : 'ifneq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=IFEQVALUE? WS? ')' CR
      {
-     modelFactory.pushIf( new NEq( new Identifier( $name.text ), new StringLiteral( $selec.text ) ) );
+     String value = $selec.text != null ? $selec.text : "";
+     modelFactory.pushIf( new NEq( new Identifier( $name.text ), new StringLiteral( value ) ) );
      System.out.println("found nifeq "+$name.text + " = " + $selec.text );}
    ;
 IFDEF

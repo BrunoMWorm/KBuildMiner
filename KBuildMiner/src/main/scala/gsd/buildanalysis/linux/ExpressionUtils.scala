@@ -80,6 +80,7 @@ trait ExpressionUtils extends Rewriter{
 
       // some KBuildMiner-specific simplifications
       case Eq( a, StringLiteral("") )       => Not( Or( Eq( a, StringLiteral("y") ), Eq( a, StringLiteral("m") ) ) )
+      case NEq( a, StringLiteral("") )      => Or( Eq( a, StringLiteral("y") ), Eq( a, StringLiteral("m") ) )
     }
   }
 
