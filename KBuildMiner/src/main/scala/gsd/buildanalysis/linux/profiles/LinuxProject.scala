@@ -29,10 +29,19 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
 
   def getTopMakefileFolders: List[String] = TOP_MAKEFILE_FOLDERS
 
-  def getLocalOverrideFolder = "/override/linux-2.6.28.6"
+  def getLocalOverrideFolder =
+    if( getVersion == "2.6.28.6" )
+      Some( "/override/linux-2.6.28.6" )
+    else
+      None
+
+  private def getVersion = basedir.substring( basedir lastIndexOf '-' + 1 )
 
   def getManualPCs: Map[String,Expression] =
-    PersistenceManager loadManualPCs getClass.getResourceAsStream( "/override/linux-2.6.28.6_pcs.xml" )
+    if( getVersion == "2.6.28.6" )
+      PersistenceManager loadManualPCs getClass.getResourceAsStream( "/override/linux-2.6.28.6_pcs.xml" )
+    else
+      Map[String,Expression]()
   
   def lookupSubMakefile( currentMakefile: String, relativePath: String): String = {
 

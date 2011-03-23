@@ -52,12 +52,16 @@ options { filter=true; }
   
 }
 
+IFEQVALUE
+  : 'y'|'m';
+
   // TODO: track ifeq and ifdef with a stack in order to reconstruct conditions
 IFEQ
-  : 'ifeq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=SELECTION WS? ')' CR
+  : 'ifeq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=IFEQVALUE? WS? ')' CR
      {
-     modelFactory.pushIf( new Eq( new Identifier( $name.text ), new StringLiteral( $selec.text ) ) );
-     System.out.println("found ifeq "+$name.text + " = " + $selec.text );}
+     String value = $selec.text != null ? $selec.text : "";
+     modelFactory.pushIf( new Eq( new Identifier( $name.text ), new StringLiteral( value ) ) );
+     System.out.println("found ifeq "+$name.text + " = " + value );}
    ;
 IFNEQ
   : 'ifneq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=SELECTION WS? ')' CR

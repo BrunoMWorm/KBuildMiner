@@ -28,6 +28,7 @@ trait ExpressionUtils extends Rewriter{
 
   val simplifyRule = innermost{
     rule{
+      // some general logical rules
       case Not( Not( a ) )                  => a
       case Not( True() )                    => False()
       case Not( False() )                   => True()
@@ -75,10 +76,10 @@ trait ExpressionUtils extends Rewriter{
       case Implies( a, False() )            => Not( a )
       case Implies( True(), a )             => a
 
-      // just curious if that helps a bit:
-      // at least we need it later, since the C expression parser cannot deal
-      // with implications (not part of C specification afaik)
-      case Implies( a, b )                  => Or( Not(a), b )
+//      case Implies( a, b )                  => Or( Not(a), b )
+
+      // some KBuildMiner-specific simplifications
+      case Eq( a, StringLiteral("") )       => Not( Or( Eq( a, StringLiteral("y") ), Eq( a, StringLiteral("m") ) ) )
     }
   }
 
