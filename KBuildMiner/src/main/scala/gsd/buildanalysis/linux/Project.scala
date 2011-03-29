@@ -36,15 +36,15 @@ abstract class Project( val basedir: String ){
     new FileInputStream( basedir + "/" + relativePathToMakefile )
   }
 
-  def lookupSubMakefile( currentMakefile: String, relativePath: String): String
+  def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String]
 
-  def findMakefile( folder: String ): Option[String] ={
+  def findMakefile( folder: String ): List[String] ={
     for( mf <- makefileNames ){
       val m = new File( basedir + "/" + folder + "/" + mf )
       if( m exists )
-        return Some( folder + ( if( folder endsWith "/" ) "" else "/" ) + mf )
+        return folder + ( if( folder endsWith "/" ) "" else "/" ) + mf :: Nil
     }
-    None
+    Nil
   }
 
   /**

@@ -35,14 +35,14 @@ class BusyBoxProject( basedir: String ) extends Project( basedir ) with TreeHelp
 
   def getLocalOverrideFolder = OVERRIDE_Folder
 
-  def lookupSubMakefile( currentMakefile: String, relativePath: String): String = {
+  def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String] = {
 
     val currentFolder = currentMakefile.substring( 0, currentMakefile.lastIndexOf('/') )
     val newPath = currentFolder + "/" + relativePath
 
     findMakefile( newPath ) match{
-      case Some( m ) => m
-      case None => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+      case m:List[String] if !m.isEmpty => m
+      case Nil => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
     }
     
   }

@@ -70,8 +70,10 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
 
   def addMakefile( folder: String, exp: Expression ){
     trace( "addMakefile" )
-    currentLoc = currentLoc :\+ BNode( MakefileBNode, List(), Some( exp ),
-      MakefileDetails( proj.lookupSubMakefile( makefilePath, folder ) ) )
+    proj.lookupSubMakefile( makefilePath, folder ) foreach{ mf =>
+      currentLoc = currentLoc :\+ BNode( MakefileBNode, List(), Some( exp ),
+        MakefileDetails( mf ) )
+    }
   }
 
   def addTempReference( variable: String, selectionSuffix: String, exp: Expression ){
@@ -104,7 +106,6 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
 
   def pushListVariable( varName: String ){
     trace( "pushListVariable: " + varName )
-    // add new IfNode and set the focus to it
     currentLoc = ( currentLoc :\+ BNode( VariableDefinitionBNode, List(), None,
       VariableDefinitionDetails( varName ) ) ).downLastOp.get
     trace( "currentLoc=" + currentLoc.node.ntype )
@@ -119,6 +120,12 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
     }
     currentLoc = currentLoc :\+ BNode( ObjectBNode, List(), Some( TRUE ),
       ObjectDetails( name, None, "o", false, listName, None, None ) )
+  }
+
+  def addVariableAssignment( name: String, op: String, value: String ){
+    trace(" addVariableAssignment: " + name + ", value: " + value )
+    currentLoc = currentLoc :\+ BNode( VariableAssignmentBNode, List(), None,
+      VariableAssignmentDetails( name, op, value ) )
   }
 
   def popListVariable = { trace("popListVariable"); pop }

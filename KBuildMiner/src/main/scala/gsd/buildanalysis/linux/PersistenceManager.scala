@@ -44,8 +44,9 @@ object PersistenceManager extends Rewriter with Logging{
     case BNode( ObjectBNode, ch, _, _ ) => <Object>{ getXml(ch) }</Object>
     case BNode( TempReferenceBNode, ch, _, _ ) => <TempReference>{ getXml(ch) }</TempReference>
     case BNode( TempCompositeListBNode, ch, _, _ ) => <TempCompositeList>{ getXml(ch) }</TempCompositeList>
-    case BNode( VariableDefinitionBNode, ch, _, _ ) => <VariableDefinition>{ getXml(ch) }</VariableDefinition>
+    case BNode( VariableDefinitionBNode, ch, _, _ ) => <ListVariableDefinition>{ getXml(ch) }</ListVariableDefinition>
     case BNode( VariableReferenceBNode, ch, _, _ ) => <VariableReference>{ getXml(ch) }</VariableReference>
+    case BNode( VariableAssignmentBNode, ch, _, _ ) => <VariableAssignment>{ getXml(ch) }</VariableAssignment>
     case n => Predef.error( "Unknown node: " + n )
   } ) % getDetails( bn )
 
@@ -68,6 +69,8 @@ object PersistenceManager extends Rewriter with Logging{
         m( varName, "varName" )
       case VariableDefinitionDetails( varName ) =>
         m( varName, "varName" )
+      case VariableAssignmentDetails( n, o, v ) =>
+        m( n, "name" ) ++ m( o, "op" ) ++ m( v, "value" )
       case _ => Map.empty
     } )
   }

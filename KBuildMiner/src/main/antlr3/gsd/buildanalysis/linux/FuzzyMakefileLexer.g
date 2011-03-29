@@ -257,6 +257,7 @@ ARBITRARYVARASSIGNMENT
   :
     WS? n=NA la=LISTASSIGNMENT v=VA2 CR
     { vars.put( $n.text, $v.text );
+    modelFactory.addVariableAssignment( $n.text, $la.text, $v.text );
     System.out.println ("Found var assignment: " + $n.text + $la.text + $v.text ); }
   ;
 
@@ -270,33 +271,46 @@ COMMON_FILES:= \
 	data_extract_to_stdout.o
 */
 ARBITRARYVARASSIGNMENT_AS_LIST 
-	:	WS? n=NA { modelFactory.pushListVariable( $n.text ); } la=LISTASSIGNMENT WS? (v=VA {
-		if( $v.text.endsWith(".o") )
-			modelFactory.addObjectToList( $v.text.substring( 0, $v.text.length()-2 ) );
-	} WS*)+
+	:	WS? n=NA { modelFactory.pushListVariable( $n.text ); } la=LISTASSIGNMENT WS? wholeValue=AVA_HELPER1
 	{
 	modelFactory.popListVariable();
+	modelFactory.addVariableAssignment( $n.text, $la.text, $wholeValue.text );
 	System.out.println("Found another variable that contains a list"); }
 	;
 
-NA : ('A'..'Z'|'a'..'z'|'_'|'-'|'0'..'9')+ ;
-VA : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/')+ ;
-VA2 : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/'|'$'|'('|')'|'='|','|' ')+ ;
-VA3 : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/'|'='|','|' ')+ ;
-   
+fragment AVA_HELPER1 : (v=VA {
+		if( $v.text.endsWith(".o") )
+			modelFactory.addObjectToList( $v.text.substring( 0, $v.text.length()-2 ) );
+	} WS*)+;
+
+
+fragment NA : ('A'..'Z'|'a'..'z'|'_'|'-'|'0'..'9'|'.')+ ;
+fragment VA : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/')+ ;
+fragment VA2 : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/'|'$'|'('|')'|'='|','|' '|'"'|'\'')+ ;
+fragment VA3 : ('a'..'z'|'A'..'Z'|'_'|'-'|'.'|'0'..'9'|'/'|'='|','|' ')+ ;
+
+
+
+fragment
 LISTASSIGNMENT
   : WS? ( '+=' | ':=' | '=' ) WS?
   ;
-     
+
+
+fragment
 ListOfObjectsOrDirs
   : ( WS | LISTELEMENT )+
   ;
 
 fragment
 LISTELEMENT
-  : obj=OBJECTFILENAME { elements_objects.add( $obj.text ); } | sub=SUBDIR { elements_folders.add( $sub.text ); } | '$(' v=NA ')' { elements_variables.add( $v.text ); }
+  : obj=OBJECTFILENAME { elements_objects.add( $obj.text ); } |
+    sub=SUBDIR { elements_folders.add( $sub.text ); } |
+    '$(' v=NA ')' { elements_variables.add( $v.text ); }
   ;
 
+
+fragment
 VARIABLE
   : '$(' ( var = CONFIGVAR { currentVariable = $var.text; } | 'call sequencer,' WS? '$(' v=CONFIGVAR ')' { currentVariable = "SequencerCall[CONFIG_SND_SEQUENCER," + $v.text + "]"; System.out.println( "Found call in list construction! Diasambiguate manually!" ); } ) ')'
   
@@ -322,13 +336,17 @@ fragment
 SUBDIR  : ('a'..'z'|'A'..'Z'|'_'|'-'|'0'..'9'|'/')+ '/'
   ;
 
+
+fragment
 SELECTION
   : 'y'|'m'|'objs'  // 'objs' just used for composite lists
   ;
   
 fragment
-FILENAME  :   ('a'..'z'|'A'..'Z'|'_'|'-'|'0'..'9')+ 
+FILENAME  :   ('a'..'z'|'A'..'Z'|'_'|'-'|'0'..'9'|'$'|'('|')')+
     ;
 
+
+fragment
 CONFIGVAR  :   'CONFIG_' ('A'..'Z'|'a'..'z'|'_'|'-'|'0'..'9')+ | 'ACPI_FUTURE_USAGE'
     ;

@@ -9,3 +9,10 @@ ifneq ($(lib-y),)
 
 endif
 ...
+
+
+Problematic things in Linux:
+
+Variable references within filenames:
+obj-$(CONFIG_NUMA)		+= numa.o numa_$(BITS).o
+-> these filenames are now in the AST, should be resolved in scala code later

@@ -45,7 +45,6 @@ case class BNode( ntype: BNodeType,
 sealed abstract class BNodeType
 
 case object RootNode extends BNodeType
-case object MainListNode extends BNodeType
 case object IfBNode extends BNodeType
 case object MakefileBNode extends BNodeType
 case object ObjectBNode extends BNodeType
@@ -54,15 +53,32 @@ case object TempReferenceBNode extends BNodeType
 case object SourceFileBNode extends BNodeType
 
 /**
- * other variables that define lists of objects
+ * other variables that define lists of objects, e.g. like:
+ COMMON_FILES:= \
+ \
+	data_skip.o \
+	data_extract_all.o \
+	data_extract_to_stdout.o
  */
 case object VariableDefinitionBNode extends BNodeType
+
 /**
  * arbitrary variables that get referenced
+ * represents a reference to a variable in one of the list assignments, e.g. like:
+ * obj-y += ${COMMON_FILES} test.o
  */
 case object VariableReferenceBNode extends BNodeType
 
+/**
+ * Similar to VariableDefinitionBNode, but catches all other variable definitions
+ * and assignments (i.e. where the values aren't lists of objects)
+ */
+case object VariableAssignmentBNode extends BNodeType
 
+
+/**
+ * Detailed information per BNode
+ */
 sealed abstract class BNodeDetails
 
 case object NoDetails extends BNodeDetails
@@ -88,6 +104,8 @@ case class SourceFileDetails( file: String ) extends BNodeDetails
 case class VariableReferenceDetails( varName: String ) extends BNodeDetails
 
 case class VariableDefinitionDetails( varName: String ) extends BNodeDetails
+
+case class VariableAssignmentDetails( varName: String, op: String, value: String ) extends BNodeDetails
 
 /**
  * Attribute grammar implementation...

@@ -43,7 +43,7 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
     else
       Map[String,Expression]()
   
-  def lookupSubMakefile( currentMakefile: String, relativePath: String): String = {
+  def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String] = {
 
     val rp = if( currentMakefile.startsWith("arch/x86/") &&
                   relativePath.startsWith("arch/x86/") )
@@ -55,11 +55,17 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
     val newPath = basedir + "/" + currentFolder + "/" + rp
 
     findMakefile( currentFolder + "/" + rp ) match{
-      case Some( m ) => {println(">>>>" + m); m}
-      case None => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+      case m: List[String] if !m.isEmpty =>  m
+      case Nil => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
     }
 
   }
+
+  override def findMakefile( folder: String ): List[String] =
+    if( folder == "arch/x86" )
+      "arch/x86/Makefile" :: "arch/x86/KBuild" :: Nil
+    else
+      super.findMakefile( folder )
 
   /**
    * Lookup source file of object node
