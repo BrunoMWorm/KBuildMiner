@@ -33,12 +33,12 @@ class RewriterTest extends FunSuite{
   val vars = List[LoadedIdentifier]("a", "b" , "c" )
 
   test("test XOR"){
-    assert( CDLBooleanTranslationMain.xor( vars ) ===
+    assert( CDLBooleanTransformation.xor( vars ) ===
             (((("a" & !"b") & !"c") | (("b" & !"a") & !"c")) | (("c" & !"a") & !"b")) )
   }
 
   test( "test MUTEX" ){
-    assert( CDLBooleanTranslationMain.mutex( vars ) ===
+    assert( CDLBooleanTransformation.mutex( vars ) ===
             ((("a" implies (!"b" & !"c")) & ("b" implies (!"a" & !"c"))) & ("c" implies (!"a" & !"b"))) )
   }
 

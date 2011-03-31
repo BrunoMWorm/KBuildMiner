@@ -20,7 +20,7 @@
 package gsd.cdl.model
 
 object CDLExpressionConversions{
-  implicit def string2Identifier(str : String) = Identifier(str)
+  implicit def string2Identifier( s: String ): CDLExpression = Identifier( s )
 }
 
 abstract class CDLOption

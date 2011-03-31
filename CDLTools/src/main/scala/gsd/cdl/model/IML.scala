@@ -19,6 +19,19 @@
  */
 package gsd.cdl.model
 
+import kiama.rewriting.Rewriter
+
+case class IML( topLevelNodes: List[Node] ){
+
+  private val _maps = TraverseHelper getMaps topLevelNodes
+
+  val rootNode = _maps._1
+  val childParentMap = _maps._2
+  val nodesById = _maps._3
+  val allNodes = _maps._4
+
+}
+
 case class Node(id : String,
                 cdlType : CDLType,
                 display : String,
@@ -68,3 +81,25 @@ case class Calculated( e : CDLExpression ) extends Constraint
 case class DefaultValue( e : CDLExpression ) extends Constraint
 // workaround, since legal_values contain a list expression, not a goal expression
 case class LegalValues( lv: LegalValuesOption ) extends Constraint
+
+
+// cannot inherit from Rewriter in case class (due to kiama 0.9, fixed in later (scala 2.8) versions)
+private object TraverseHelper extends Rewriter{
+  def getMaps( topLevelNodes: List[Node] ) ={
+    val rn = Node( "root", PackageType, "Our synthetic root node", None,
+                      NoneFlavor, None, None, None, List(), List(), List(), topLevelNodes )
+    var cpm = Map[String,String]()
+    var nbi = Map[String,Node]()
+    var an = List[Node]()
+
+    everywheretd( query {
+      case node@Node(n,_,_,_,_,_,_,_,_,_,_,children) => {
+        children.foreach( x => cpm += ( x.id -> n ) )
+        nbi += (n -> node)
+        an = node :: an
+      }
+    } )(rn)
+
+    (rn, cpm, nbi, an)
+  }
+}

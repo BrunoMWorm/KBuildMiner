@@ -22,7 +22,6 @@ package gsd.cdl
 import model._
 import util.parsing.combinator._
 
-//TODO test precedence of operations (especially of the conditional statement, which is probably wrong)
 //TODO use flatten2 for constructing expression
 trait CDLExpressionParser extends JavaTokenParsers with ImplicitConversions {
 

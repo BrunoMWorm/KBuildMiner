@@ -111,14 +111,14 @@ object EcosIML extends IMLParser {
 
   def parseString(s : String) =
     parseAll(cdl, s) match {
-      case Success(res,_) => res
-      case x => error(x.toString)
+      case Success(res,_) => IML( res )
+      case x => error( x toString )
     }
 
   def parseFile(file : String) =
     parseAll(cdl, new PagedSeqReader(PagedSeq fromFile file)) match {
-      case Success(res,_) => res
-      case x => error(x.toString)
+      case Success(res,_) => IML( res )
+      case x => error( x toString )
     }
 
   def main(args : Array[String]) : Unit = {
