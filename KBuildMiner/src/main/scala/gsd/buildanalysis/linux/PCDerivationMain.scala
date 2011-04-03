@@ -97,11 +97,19 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
           case b@BNode( _, _, _, _ ) => {
             val next = b->moveUp
             val res = next.map( moveUpStrategy( cache + t ) ).filter( _ != None )
+
             if( res isEmpty )
               None
             else{
               Some( Path( res.map( _ match{
-                case Some( p:Path ) => p
+                case Some( p:Path ) => {
+                  if( p.node eq b.parent[BNode] )
+                    p
+                  else{
+                    val ifs = findPath( b, p.node, List() )
+                    (p /: ifs)( (aP,x) => Path( aP :: Nil, x, x.ntype.toString ) )
+                  }
+                }
                 case _ => Predef error "Path expected"
               } ), b, b.ntype.toString ) )
             }
@@ -111,6 +119,25 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
       }
 
     }
+
+  def findPath( source: BNode, target: BNode, path: List[BNode] ): List[BNode] = {
+    val newPath = if( source.ntype == IfBNode )
+      source :: path
+    else
+      path
+
+    val parent = source.parent[BNode]
+
+    if( parent.subnodes.exists( _ eq target ) )
+      newPath
+    else{
+      if( parent.ntype == MakefileBNode )
+        Nil
+      else
+        findPath( parent, target, newPath )
+    }
+  }
+
 
   private def node2String( b: BNode ) =
     b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString
