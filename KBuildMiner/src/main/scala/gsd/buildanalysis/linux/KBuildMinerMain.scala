@@ -43,7 +43,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
     val p = ProjectFactory newProject codebase
     val ast = buildAST( p )
-    val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
+    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs )
     val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
     Map( boolPCs: _* )
   }
@@ -68,13 +68,15 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     if( _saveAST == "true" )
       PersistenceManager.outputXML( ast, _astOutput )
 
-    val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
+    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs )
     val out = new PrintWriter( new FileWriter( _pcOutput ) )
     info( "Saving PCs to: " + _pcOutput )
     pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
       out.println( name + ": " + PersistenceManager.pp( rewrite( removeCONFIG_Prefix)( pc ) ) )
     }
     out close
+
+    // extract C flags
 
   }
 

@@ -20,11 +20,11 @@ import model._
 import kiama.rewriting.Rewriter
 import gsd.common.Logging
 
-object PCDerivationMain extends Rewriter with TreeHelper with Logging with ExpressionUtils{
+object PCDerivation extends Rewriter with TreeHelper with Logging with ExpressionUtils{
 
   case class Path( children: List[Path], node: BNode, name: String )
 
-  def calculatePCs( tree: BNode, manualPCs: Map[String,Expression] ): Map[String,Expression] = {
+  def calculateFilePCs( tree: BNode, manualPCs: Map[String,Expression] ): Map[String,Expression] = {
 
     val objectFiles = collectl{
       case b@BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => b
