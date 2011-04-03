@@ -20,7 +20,8 @@ import kiama.rewriting.Rewriter
 import gsd.common.Logging
 import model._
 import xml.{UnprefixedAttribute, Elem, Node, XML}
-import java.io.{InputStream, File}
+import java.io.InputStream
+import gsd.buildanalysis.linux.CFlagRecognition.{CFLAGS_REMOVE_file, CFLAGS_file, FileSpecificCFlags, EXTRA_CFLAGS}
 
 object PersistenceManager extends Rewriter with Logging{
 
@@ -95,6 +96,47 @@ object PersistenceManager extends Rewriter with Logging{
         case _ => ;
       }
     ret
+  }
+
+  def saveCFlags( extra_cflags: List[EXTRA_CFLAGS], fsFlags: List[FileSpecificCFlags], targetFile: String ){
+
+    val cflags_file = fsFlags filter( _.isInstanceOf[CFLAGS_file] ) map( _.asInstanceOf[CFLAGS_file] )
+    val cflags_remove_file = fsFlags filter( _.isInstanceOf[CFLAGS_REMOVE_file] ) map( _.asInstanceOf[CFLAGS_REMOVE_file] )
+
+    val xml = <cflags>
+      <EXTRA_CFLAGS_Assignments>{
+        extra_cflags map{ x =>
+          ( x, <EXTRA_CFLAGS value={x.value} op={x.assignmentOp} belongsTo={x.belongsTo}/> )
+        } map { _ match {
+          case ( EXTRA_CFLAGS(_,_,Some(pc),_), n ) => n % Map( ( "pc" -> pp( pc ) ) )
+          case ( _, n ) => n
+        }}
+      }</EXTRA_CFLAGS_Assignments>
+      <CFLAGS_file.o>{
+        cflags_file map{ x =>
+          ( x, <CFLAGS value={x.value} op={x.assignmentOp} belongsTo={x.belongsTo}/> )
+        } map { _ match {
+          case ( y@CFLAGS_file( Some(sf),_,_,_,_), n ) => ( y, n % Map( ( "sourceFile" -> sf ) ) )
+          case ( y, n ) => (y,n)
+        }} map{ _ match {
+          case ( CFLAGS_file( _,_,_,Some(pc),_), n ) => n % Map( ( "pc" -> pp( pc ) ) )
+          case ( _, n ) => n
+        }}
+      }</CFLAGS_file.o>
+      <CFLAGS_REMOVE_file.o>{
+        cflags_remove_file map{ x =>
+          ( x, <CFLAGS_REMOVE value={x.value} op={x.assignmentOp} belongsTo={x.belongsTo}/> )
+        } map { _ match {
+          case ( y@CFLAGS_REMOVE_file( Some(sf),_,_,_,_), n ) => ( y, n % Map( ( "sourceFile" -> sf ) ) )
+          case ( y, n ) => (y,n)
+        }} map{ _ match {
+          case ( CFLAGS_REMOVE_file( _,_,_,Some(pc),_), n ) => n % Map( ( "pc" -> pp( pc ) ) )
+          case ( _, n ) => n
+        }}
+      }</CFLAGS_REMOVE_file.o>
+    </cflags>
+
+    XML.save( targetFile, xml )
   }
 
   /**

@@ -56,14 +56,14 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
 
     findMakefile( currentFolder + "/" + rp ) match{
       case m: List[String] if !m.isEmpty =>  m
-      case Nil => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+      case _ => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
     }
 
   }
 
   override def findMakefile( folder: String ): List[String] =
     if( folder == "arch/x86" )
-      "arch/x86/Makefile" :: "arch/x86/KBuild" :: Nil
+      "arch/x86/Makefile" :: Nil
     else
       super.findMakefile( folder )
 

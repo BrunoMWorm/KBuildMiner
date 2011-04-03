@@ -34,7 +34,7 @@ case class BNode( ntype: BNodeType,
     case BNode( RootNode, _, _, _ ) => "[root]"
     case BNode( _, _, _, MakefileDetails(m) ) => "[Makefile: " + m + "]"
     case BNode( _, _, _, ObjectDetails(oF,_,_,_,_,_,_) ) => "[Object: " + oF + "]"
-    case BNode( _, _, _, SourceFileDetails(f) ) => "[SourceFile: " + f + "]"
+//    case BNode( _, _, _, SourceFileDetails(f) ) => "[SourceFile: " + f + "]"
     case BNode( _, _, _, VariableDefinitionDetails(v) ) => "[VariableDefinition: " + v + "]"
     case BNode( _, _, _, VariableReferenceDetails(v) ) => "[VariableReference: " + v + "]"
     case _ => super.toString
@@ -50,7 +50,7 @@ case object MakefileBNode extends BNodeType
 case object ObjectBNode extends BNodeType
 case object TempCompositeListBNode extends BNodeType
 case object TempReferenceBNode extends BNodeType
-case object SourceFileBNode extends BNodeType
+//case object SourceFileBNode extends BNodeType
 
 /**
  * other variables that define lists of objects, e.g. like:
@@ -99,7 +99,7 @@ case class TempReferenceDetails( variable: String,
 case class TempCompositeListDetails( listName: String,
                                      suffix: Option[String] ) extends BNodeDetails
 
-case class SourceFileDetails( file: String ) extends BNodeDetails
+//case class SourceFileDetails( file: String ) extends BNodeDetails
 
 case class VariableReferenceDetails( varName: String ) extends BNodeDetails
 
@@ -199,7 +199,7 @@ trait TreeHelper extends Rewriter with Logging{
 
           var collection = List[T]()
           def collect = (v : T) => {
-            trace("   # visiting: " + v.asInstanceOf[BNode].ntype.toString )
+            trace("   # collecting: " + v.toString )
             collection = collection ::: List (v)
           }
           ( mytd( query( f andThen collect ) ) ) (t)

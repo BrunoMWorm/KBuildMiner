@@ -68,7 +68,9 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     if( _saveAST == "true" )
       PersistenceManager.outputXML( ast, _astOutput )
 
+    info( "Deriving file presence conditions..." )
     val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs )
+
     val out = new PrintWriter( new FileWriter( _pcOutput ) )
     info( "Saving PCs to: " + _pcOutput )
     pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
@@ -77,7 +79,11 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     out close
 
     // extract C flags
-
+    info( "Extracting additional C flags..." )
+    PersistenceManager.saveCFlags(
+      rewrite( removeCONFIG_Prefix)( CFlagRecognition.findExtraCFlags( ast ) ),
+      rewrite( removeCONFIG_Prefix)( CFlagRecognition.findFileSpecificFlags( ast ) ),
+      "output/cflags-2.6.33.3.xml" )
   }
 
   private def getArg[T]( arg: Option[T], name:String, default: String ): String =
