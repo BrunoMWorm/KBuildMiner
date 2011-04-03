@@ -28,6 +28,7 @@ import org.antlr.runtime.{ANTLRInputStream, CommonTokenStream, ANTLRFileStream}
  */
 object KBuildMinerMain extends optional.Application with Logging with BuildMinerCommons{
 
+  // just some defaults in case nothing is specified in the properties file or on command line
   val Linux_KERNEL = "../../../workspace/codebases/linux-2.6.28.6"
   val PROPERTIES = "miner.properties"
 
@@ -40,7 +41,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
    * @return boolean PCs
    */
   def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
-    val p = ProjectFactory.newProject( codebase )
+    val p = ProjectFactory newProject codebase
     val ast = buildAST( p )
     val pcs = PCDerivationMain.calculatePCs( ast, p.getManualPCs )
     val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
@@ -100,7 +101,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     BNode( RootNode, proj.getTopMakefileFolders.flatMap{
       f => proj.findMakefile(f) match{
         case mfs: List[String] if !mfs.isEmpty => mfs.map( processMakefile( _, Some( True() ), proj ) )
-        case Nil => Predef.error("No KBuild Makefile found in: " + f )
+        case _ => Predef.error("No KBuild Makefile found in: " + f )
       }
     }, None, NoDetails )
 
@@ -118,7 +119,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
     val input = new ANTLRInputStream( proj getStreamHandle mf )
     val lex = new FuzzyMakefileLexer( input )
-    lex.setModelFactory( factory )
+    lex setModelFactory factory
 
     val tokens = new CommonTokenStream( lex )
 

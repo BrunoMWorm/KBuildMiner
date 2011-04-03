@@ -37,17 +37,16 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
       val oF = getSourceFile( o )
       debug( "Trying to find path for: " + o )
 
-      moveUpStrategy(o) match{
-        case Some( p: Path ) => {
-          debug( "...path found!" )
-          val exp = path2Exp( p )
+      calculateBNodePC( tree, o ) match{
+        case Some( exp ) => {
           ret.get( oF ) match{
             case Some( e ) => ret += ( oF -> ( e | exp ) )
             case None => ret += ( oF -> exp )
           }
           debug( "Expression of path for object occurrence " + oF + ": " + PersistenceManager.pp( exp ) )
         }
-        case _ => debug( "...no path found!" )
+        case None =>
+          debug( "...no path found!" )
       }
 
     }
@@ -59,6 +58,12 @@ object PCDerivationMain extends Rewriter with TreeHelper with Logging with Expre
     Map( ret.map{ case (a,b) => ( a, simplify(b) ) }.toList: _* )
 
   }
+
+  def calculateBNodePC( ast: BNode, node: BNode ): Option[Expression] =
+    moveUpStrategy( node ) match{
+      case Some( p: Path ) => Some( path2Exp( p ) )
+      case None => None
+    }
 
   /**
    * Convert path to expression...
