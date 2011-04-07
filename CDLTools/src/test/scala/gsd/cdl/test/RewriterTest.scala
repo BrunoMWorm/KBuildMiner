@@ -18,13 +18,10 @@
  */
 package gsd.cdl.test
 
-import org.junit.Test
 import org.junit.runner.RunWith
-import org.scalatest.junit.{JUnitRunner, AssertionsForJUnit}
+import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
-import gsd.cdl.CDLBooleanTranslationMain
 import gsd.cdl.model._
-import gsd.cdl.ase10.EcosI386BooleanTranslationMain
 
 @RunWith(classOf[JUnitRunner])
 class RewriterTest extends FunSuite{
