@@ -1,3 +1,5 @@
+package gsd.cdl.ase10
+
 /*
  * Copyright (c) 2010 Thorsten Berger <berger@informatik.uni-leipzig.de>
  *
@@ -16,8 +18,6 @@
  * You should have received a copy of the GNU General Public License
  * along with CDLTools.  If not, see <http://www.gnu.org/licenses/>.
  */
-package gsd.cdl
-
 import collection.immutable.PagedSeq
 import model._
 import statistics.CDLModel

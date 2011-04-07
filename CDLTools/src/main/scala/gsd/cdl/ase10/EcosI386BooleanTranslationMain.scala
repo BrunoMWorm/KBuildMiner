@@ -1,3 +1,5 @@
+package gsd.cdl.ase10
+
 /*
  * Copyright (c) 2010 Thorsten Berger <berger@informatik.uni-leipzig.de>
  *
@@ -16,19 +18,18 @@
  * You should have received a copy of the GNU General Public License
  * along with CDLTools.  If not, see <http://www.gnu.org/licenses/>.
  */
-package gsd.cdl
-
-import model._
+import gsd.cdl.model._
 import util.parsing.input.PagedSeqReader
 import collection.immutable.PagedSeq
 import kiama.rewriting.Rewriter
-import model.CDLExpressionConversions._
+import gsd.cdl.model.CDLExpressionConversions._
 import java.io.{PrintStream, PrintWriter, FileWriter, File}
+import gsd.cdl.IMLParser
 
 /**
  * @deprecated use IML2BoolMain and CDLBooleanTransformation
  */
-object CDLBooleanTranslationMain extends IMLParser with Rewriter{
+object EcosI386BooleanTranslationMain extends IMLParser with Rewriter{
 
   def main( args: Array[String] ){
 
