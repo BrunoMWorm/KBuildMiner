@@ -1,4 +1,78 @@
 
+component CYGBLD_GLOBAL_OPTIONS{
+  display "Global build options"
+  flavor none 
+
+  option CYGBLD_GLOBAL_COMMAND_PREFIX{
+    display "Global command prefix"
+    default_value ["i386-elf" ]
+    flavor data 
+  }
+
+  option CYGBLD_GLOBAL_CFLAGS{
+    display "Global compiler flags"
+    default_value [CYGBLD_GLOBAL_WARNFLAGS . " -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions " ]
+    flavor data 
+  }
+
+  option CYGBLD_GLOBAL_LDFLAGS{
+    display "Global linker flags"
+    default_value ["-g -nostdlib -Wl,--gc-sections -Wl,-static" ]
+    flavor data 
+  }
+
+  option CYGBLD_BUILD_GDB_STUBS{
+    display "Build GDB stub loader image"
+    default_value [0 ]
+    requires [CYG_HAL_STARTUP == "FLOPPY" || CYG_HAL_STARTUP == "GRUB" ]
+    requires [CYGSEM_HAL_ROM_MONITOR ]
+    requires [CYGBLD_BUILD_COMMON_GDB_STUBS ]
+    requires [CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS ]
+    requires [! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT ]
+    requires [! CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT ]
+    requires [! CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT ]
+    requires [! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT ]
+    requires [! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM ]
+  }
+
+  option CYGBLD_GLOBAL_WARNFLAGS{
+    display "Standard compiler warning flags"
+    calculated ["-Wall -Wpointer-arith -Wstrict-prototypes -Wundef -Woverloaded-virtual -Wno-write-strings " ]
+    flavor data 
+  }
+
+  option CYGBLD_BUILD_COMMON_GDB_STUBS{
+    display "Build common GDB stub ROM image"
+    default_value [0 ]
+    requires [CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS ]
+  }
+}
+
+component CYGPKG_REDBOOT_HAL_OPTIONS{
+  display "Redboot HAL options"
+  active_if [CYGPKG_REDBOOT ]
+  flavor none 
+
+  component CYGBLD_BUILD_REDBOOT_BIN{
+    display "Build RedBoot binary image"
+    default_value [1 ]
+
+    option CYGBLD_BUILD_REDBOOT_BIN_FLOPPY{
+      display "Build Redboot FLOPPY binary image"
+      active_if [CYGBLD_BUILD_REDBOOT ]
+      active_if [CYG_HAL_STARTUP == "FLOPPY" ]
+      calculated [1 ]
+    }
+
+    option CYGBLD_BUILD_REDBOOT_BIN_ROM{
+      display "Build Redboot ROM binary image"
+      active_if [CYGBLD_BUILD_REDBOOT ]
+      active_if [CYG_HAL_STARTUP == "ROM" ]
+      calculated [1 ]
+    }
+  }
+}
+
 package CYGPKG_HAL{
   display "eCos HAL"
   requires [CYGPKG_INFRA ]
@@ -4178,22 +4252,22 @@ package CYGPKG_LIBC{
 
       option CYGNUM_LIBC_TIME_DST_DEFAULT_STATE{
         display "Default Daylight Savings Time state"
-        legal_values [ -1 to 1 ]
-        default_value [ -1 ]
+        legal_values [-- -1 to 1 ]
+        default_value [-- -1 ]
         flavor data 
       }
 
       option CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET{
         display "Default Standard Time offset"
-        legal_values [ -90000 to 90000 ]
-        default_value [ 0 ]
+        legal_values [-- -90000 to 90000 ]
+        default_value [-- 0 ]
         flavor data 
       }
 
       option CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET{
         display "Default Daylight Savings Time offset"
-        legal_values [ -90000 to 90000 ]
-        default_value [ 3600 ]
+        legal_values [-- -90000 to 90000 ]
+        default_value [-- 3600 ]
         flavor data 
       }
     }
@@ -4382,8 +4456,8 @@ package CYGPKG_LIBM{
 
   option CYGNUM_LIBM_X_TLOSS{
     display "Bessel function limit of significance"
-    default_value [9999999999]
-    legal_values[1 to 9999999999]
+    default_value [1.41484755040568800000e+16 ]
+    legal_values [1 to 1e308 ]
     flavor data 
   }
 

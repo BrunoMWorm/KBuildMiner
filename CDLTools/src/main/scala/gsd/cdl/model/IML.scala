@@ -20,6 +20,7 @@
 package gsd.cdl.model
 
 import kiama.rewriting.Rewriter
+import kiama.attribution.Attributable
 
 case class IML( topLevelNodes: List[Node] ){
 
@@ -43,7 +44,7 @@ case class Node(id : String,
                 reqs : List[CDLExpression],
                 activeIfs : List[CDLExpression],
                 implements : List[CDLExpression], // just identifiers
-                children : List[Node])
+                children : List[Node])// extends Attributable
 
 sealed abstract class Flavor
 case object NoneFlavor extends Flavor{

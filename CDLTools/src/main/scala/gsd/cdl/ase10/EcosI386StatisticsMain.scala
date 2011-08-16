@@ -18,16 +18,16 @@ package gsd.cdl.ase10
  * You should have received a copy of the GNU General Public License
  * along with CDLTools.  If not, see <http://www.gnu.org/licenses/>.
  */
-import model._
-import statistics.{Feature, Features, CDLModel}
 import util.parsing.input.PagedSeqReader
 import collection.immutable.PagedSeq
 import kiama.rewriting.Rewriter
 import scala.collection.mutable
 import java.io._
-import javax.xml.bind.{Unmarshaller, Marshaller, JAXBContext}
+import javax.xml.bind.{Marshaller, JAXBContext}
 import scala.collection.jcl.Conversions._
 import gsd.cdl.statistics._
+import gsd.cdl.IMLParser
+import gsd.cdl.model._
 
 object EcosI386StatisticsMain extends IMLParser with Rewriter{
 
