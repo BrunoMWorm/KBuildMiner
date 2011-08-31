@@ -20,16 +20,16 @@ package gsd.cdl.ase10
  */
 import util.parsing.input.PagedSeqReader
 import collection.immutable.PagedSeq
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import scala.collection.mutable
 import java.io._
 import javax.xml.bind.{Marshaller, JAXBContext}
-import scala.collection.jcl.Conversions._
+import collection.JavaConversions._
 import gsd.cdl.statistics._
-import gsd.cdl.IMLParser
+import gsd.cdl.parser.combinator.IMLParser
 import gsd.cdl.model._
 
-object EcosI386StatisticsMain extends IMLParser with Rewriter{
+object EcosI386StatisticsMain extends IMLParser{
 
   var nodesById = Map[String,Node]()
   var childParentMap = Map[String,String]()
@@ -69,7 +69,7 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
 
     // branching factor histogram
     outputHistogram( ret,
-      allNodes.map( _.children.size ).filter( _ != 0 ),
+      allNodes.map( _.nchildren.size ).filter( _ != 0 ),
       "output/histograms/branching_" + ret.target + ".csv" )
 
 
@@ -166,17 +166,17 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
 
             val constrainedInterfaces = gtype match{
               case "xor" => implements.filter( interf =>
-                              interf.reqs.contains( Eq( Identifier(interf.id), IntLiteral( 1 ) ) ) ||
-                              interf.reqs.contains( Eq( IntLiteral( 1 ), Identifier(interf.id) ) ) )
+                              interf.reqs.contains( Eq( Identifier(interf.id), LongIntLiteral( 1 ) ) ) ||
+                              interf.reqs.contains( Eq( LongIntLiteral( 1 ), Identifier(interf.id) ) ) )
               case "mutex" => implements.filter( interf =>
-                              interf.reqs.contains( LessThanOrEq( Identifier(interf.id), IntLiteral( 1 ) ) ) ||
-                              interf.reqs.contains( GreaterThanOrEq( IntLiteral( 1 ), Identifier(interf.id) ) ) )
+                              interf.reqs.contains( LessThanOrEq( Identifier(interf.id), LongIntLiteral( 1 ) ) ) ||
+                              interf.reqs.contains( GreaterThanOrEq( LongIntLiteral( 1 ), Identifier(interf.id) ) ) )
             }
 
 
             constrainedInterfaces.foreach( ri => groupedNodesOnThisLevel.get( ri ) match {
-              case Some( i ) => groupedNodesOnThisLevel + ( ri -> ( c :: i ) )
-              case None => groupedNodesOnThisLevel + ( ri -> ( c :: Nil ) ) 
+              case Some( i ) => groupedNodesOnThisLevel+=( ri -> ( c :: i ) )
+              case None => groupedNodesOnThisLevel += ( ri -> ( c :: Nil ) )
             })
 
           }
@@ -231,11 +231,11 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
 //    println( "\n==== all constrained interfaces: ")
 //    constrainedInterfaces.foreach( x => println( x.reqs ) )
     val cardinalityConstrainedInterfaces = constrainedInterfaces.filter( x => collectl{
-             case Eq( IntLiteral( 1 ), Identifier( x.id ) )             => x.id
-             case Eq( Identifier( x.id ), IntLiteral( 1 ) )             => x.id
-             case GreaterThanOrEq( IntLiteral( 1 ), Identifier( x.id) ) => x.id
-             case GreaterThanOrEq( Identifier( x.id), IntLiteral( 1 ) ) => x.id
-             case LessThanOrEq( Identifier( x.id ), IntLiteral( 1 ) )   => x.id
+             case Eq( LongIntLiteral( 1 ), Identifier( x.id ) )             => x.id
+             case Eq( Identifier( x.id ), LongIntLiteral( 1 ) )             => x.id
+             case GreaterThanOrEq( LongIntLiteral( 1 ), Identifier( x.id) ) => x.id
+             case GreaterThanOrEq( Identifier( x.id), LongIntLiteral( 1 ) ) => x.id
+             case LessThanOrEq( Identifier( x.id ), LongIntLiteral( 1 ) )   => x.id
           }(x.reqs).size > 0 )
 
     println( "\n====cardinality-constrained interfaces: ")
@@ -280,6 +280,7 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
       case _            => childParentMap.get( node.id ) match{
                               case Some("root") => None
                               case Some( n )  => findPackage( nodesById.get(n).get )
+                              case _ => sys.error( "No parent node found?!" )
                            }
     }
   }
@@ -299,7 +300,7 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
     val intEnumRestricted = lvRestrictedNodes.
             filter( x => x.legalValues.get.ranges.forall( e =>
               e match {
-                  case SingleValueRange( IntLiteral( _ ) ) => true
+                  case SingleValueRange( LongIntLiteral( _ ) ) => true
                   case _ => false
               } )
             )
@@ -307,7 +308,7 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
             filter( x => x.legalValues.get.ranges.forall( e =>
               e match {
                   case SingleValueRange( StringLiteral( _ ) ) => true
-                  case SingleValueRange( IntLiteral( _ ) ) => true
+                  case SingleValueRange( LongIntLiteral( _ ) ) => true
                   case _ => false
               } )
             )
@@ -315,10 +316,10 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
     val rangeRestricted = lvRestrictedNodes.
             filter( x => x.legalValues.get.ranges.forall( e =>
               e match {
-                  case MinMaxRange( IntLiteral( _ ), IntLiteral( _ ) ) => true
+                  case MinMaxRange( LongIntLiteral( _ ), LongIntLiteral( _ ) ) => true
                   // the following match on hex bounds; just a workaround for now, since hex is parsed as string
-                  case MinMaxRange( StringLiteral( _ ), IntLiteral( _ ) ) => true
-                  case MinMaxRange( IntLiteral( _ ), StringLiteral( _ ) ) => true
+                  case MinMaxRange( StringLiteral( _ ), LongIntLiteral( _ ) ) => true
+                  case MinMaxRange( LongIntLiteral( _ ), StringLiteral( _ ) ) => true
                   case MinMaxRange( StringLiteral( _ ), StringLiteral( _ ) ) => true
                   case _ => false
               } )
@@ -381,11 +382,11 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
     val allExpressions = List.flatten( collectl{
       case Node( id,_,_,_,_,dv,ca,lv,re,ai,_,_) => {
         var el = List[CDLExpression]()
-        if( ca != None ) el += ca.get
-        if( dv != None ) el += dv.get
+        if( ca != None ) el = ca.get :: el
+        if( dv != None ) el = dv.get :: el
 //        if( lv != None ) el += lv.get
-        re.foreach( el += _ )
-        ai.foreach( el += _ )
+        re.foreach( x => el = x :: el )
+        ai.foreach( x => el = x :: el )
 //        List.flatten( re.map( _.splitConjunctions ) ).foreach( el += _ )
 //        List.flatten( ai.map( _.splitConjunctions ) ).foreach( el += _ )
         el
@@ -473,8 +474,8 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
     l.foldLeft( True(): CDLExpression )( (a,b) => a & b )
 
   val isItBoolean1stPass = rule {
-    case t@IntLiteral( 1 ) => t
-    case t@IntLiteral( 0 ) => t
+    case t@LongIntLiteral( 1 ) => t
+    case t@LongIntLiteral( 0 ) => t
     // TODO A == 0 or A == 1
   }
 
@@ -488,7 +489,7 @@ object EcosI386StatisticsMain extends IMLParser with Rewriter{
       case t:Identifier => t
       case t:Not => t
     }
-  }, { s => all(all(failure)) }
+  }, { s => all(all(fail)) }
   )
 
   val returnNonBoolean = rule{

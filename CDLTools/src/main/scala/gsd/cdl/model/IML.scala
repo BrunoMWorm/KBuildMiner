@@ -19,8 +19,10 @@
  */
 package gsd.cdl.model
 
-import kiama.rewriting.Rewriter
-import kiama.attribution.Attributable
+import org.kiama.attribution.Attributable
+import org.kiama.attribution.Attribution._
+import org.kiama._
+import org.kiama.rewriting.Rewriter._
 
 case class IML( topLevelNodes: List[Node] ){
 
@@ -44,7 +46,7 @@ case class Node(id : String,
                 reqs : List[CDLExpression],
                 activeIfs : List[CDLExpression],
                 implements : List[CDLExpression], // just identifiers
-                children : List[Node])// extends Attributable
+                nchildren : List[Node]) extends Attributable
 
 sealed abstract class Flavor
 case object NoneFlavor extends Flavor{
@@ -84,10 +86,10 @@ case class DefaultValue( e : CDLExpression ) extends Constraint
 case class LegalValues( lv: LegalValuesOption ) extends Constraint
 
 
-// cannot inherit from Rewriter in case class (due to kiama 0.9, fixed in later (scala 2.8) versions)
-private object TraverseHelper extends Rewriter{
+private object TraverseHelper{
+
   def getMaps( topLevelNodes: List[Node] ) ={
-    val rn = Node( "root", PackageType, "Our synthetic root node", None,
+    val rn = Node( "root", PackageType, "Synthetic root node", None,
                       NoneFlavor, None, None, None, List(), List(), List(), topLevelNodes )
     var cpm = Map[String,String]()
     var nbi = Map[String,Node]()
@@ -103,4 +105,14 @@ private object TraverseHelper extends Rewriter{
 
     (rn, cpm, nbi, an)
   }
+}
+
+trait ImlTreeAttributes{
+
+  val numchildren: Node ==> Int =
+    attr{
+      case Node(_,_,_,_,_,_,_,_,_,_,_,List()) => 0
+      case Node(_,_,_,_,_,_,_,_,_,_,_,children) => children.size + ( 0 /: children )( (a,b) => a + (b->numchildren) )
+    }
+
 }

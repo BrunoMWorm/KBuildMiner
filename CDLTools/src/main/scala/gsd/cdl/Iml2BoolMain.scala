@@ -21,17 +21,18 @@ package gsd.cdl
 
 import java.io.PrintStream
 import model.CDLBooleanTransformation
+import parser.EcosIml.CupParser
 
 object Iml2BoolMain{
 
   def main( args: Array[String] ){
 
     if( args.size < 1 )
-      error( "Missing parameters: <iml file> [output file]" )
+      sys.error( "Missing parameters: <iml file> [output file]" )
 
     else{
       val out = if (args.size > 1) new PrintStream( args(1) ) else System.out
-      val model = EcosIML parseFile args(0)
+      val model = CupParser parseFile args(0)
       val transform = new CDLBooleanTransformation( model )
       transform exportFormula out
     }

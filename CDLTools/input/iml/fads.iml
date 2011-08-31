@@ -3856,22 +3856,22 @@ package CYGPKG_LIBC{
 
       option CYGNUM_LIBC_TIME_DST_DEFAULT_STATE{
         display "Default Daylight Savings Time state"
-        legal_values [-- -1 to 1 ]
-        default_value [-- -1 ]
+        legal_values [-1 to 1 ]
+        default_value [-1 ]
         flavor data 
       }
 
       option CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET{
         display "Default Standard Time offset"
-        legal_values [-- -90000 to 90000 ]
-        default_value [-- 0 ]
+        legal_values [-90000 to 90000 ]
+        default_value [0 ]
         flavor data 
       }
 
       option CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET{
         display "Default Daylight Savings Time offset"
-        legal_values [-- -90000 to 90000 ]
-        default_value [-- 3600 ]
+        legal_values [-90000 to 90000 ]
+        default_value [3600 ]
         flavor data 
       }
     }

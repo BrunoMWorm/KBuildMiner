@@ -21,15 +21,15 @@ package gsd.cdl.ase10
 import gsd.cdl.model._
 import util.parsing.input.PagedSeqReader
 import collection.immutable.PagedSeq
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import gsd.cdl.model.CDLExpressionConversions._
 import java.io.{PrintStream, PrintWriter, FileWriter, File}
-import gsd.cdl.IMLParser
+import gsd.cdl.parser.combinator.IMLParser
 
 /**
  * @deprecated use IML2BoolMain and CDLBooleanTransformation
  */
-object EcosI386BooleanTranslationMain extends IMLParser with Rewriter{
+object EcosI386BooleanTranslationMain extends IMLParser{
 
   def main( args: Array[String] ){
 

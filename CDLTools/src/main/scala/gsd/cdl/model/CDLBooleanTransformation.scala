@@ -19,10 +19,10 @@
 
 package gsd.cdl.model
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import java.io.{PrintStream, OutputStream}
 
-class CDLBooleanTransformation( model: IML ) extends Rewriter{
+class CDLBooleanTransformation( model: IML ){
 
   import CDLBooleanTransformation._
 
@@ -166,7 +166,7 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
       // that could disable it, In this case, the states of all the nodes implementing the interface don't
       // play a role at all.
 
-      case Eq( interf@LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 0 ) ) => !interf
+      case Eq( interf@LoadedIdentifier( id, InterfaceType, _ ), LongIntLiteral( 0 ) ) => !interf
       //                    impls( id ).foldLeft( True():CDLExpression )( (a,b) => a & !b )
 
       //      case GreaterThan( LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 0 ) ) =>
@@ -180,19 +180,19 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
       // or groups
       // here, it's sufficient to reference the interface node, since the or constraint is already
       // incorporated in the interface constraint, introduced in the getFormula() method
-      case GreaterThan( interf@LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 0 ) ) => interf
-      case GreaterThanOrEq( interf@LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 1 ) ) => interf
-      case NEq( interf@LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 0 ) ) => interf
-      case NEq( IntLiteral( 0 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) => interf
+      case GreaterThan( interf@LoadedIdentifier( id, InterfaceType, _ ), LongIntLiteral( 0 ) ) => interf
+      case GreaterThanOrEq( interf@LoadedIdentifier( id, InterfaceType, _ ), LongIntLiteral( 1 ) ) => interf
+      case NEq( interf@LoadedIdentifier( id, InterfaceType, _ ), LongIntLiteral( 0 ) ) => interf
+      case NEq( LongIntLiteral( 0 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) => interf
 
       // mutex group: interface <= 1
       // don't reference the interface symbol here!
-      case GreaterThanOrEq( IntLiteral( 1 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) =>
+      case GreaterThanOrEq( LongIntLiteral( 1 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) =>
                     mutex( impls( id ) )
 
-      case Eq( interf@LoadedIdentifier( id, InterfaceType, _ ), IntLiteral( 1 ) ) =>
+      case Eq( interf@LoadedIdentifier( id, InterfaceType, _ ), LongIntLiteral( 1 ) ) =>
         interf & xor( impls( id ) )
-      case Eq( IntLiteral( 1 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) =>
+      case Eq( LongIntLiteral( 1 ), interf@LoadedIdentifier( id, InterfaceType, _ ) ) =>
         interf & xor( impls( id ) )
 
     }
@@ -201,10 +201,10 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
   val equalsRule = everywheretd {
     rule{
       case Eq( id:LoadedIdentifier, StringLiteral( v ) ) if v != "" => id
-      case Eq( id:LoadedIdentifier, IntLiteral( v ) ) if v != 0 => id
-      case Eq( id:LoadedIdentifier, IntLiteral( 0 ) ) => !id
-      case NEq( IntLiteral( 0 ), id:LoadedIdentifier ) => id
-      case GreaterThan( id:LoadedIdentifier, IntLiteral( 0 ) ) => id
+      case Eq( id:LoadedIdentifier, LongIntLiteral( v ) ) if v != 0 => id
+      case Eq( id:LoadedIdentifier, LongIntLiteral( 0 ) ) => !id
+      case NEq( LongIntLiteral( 0 ), id:LoadedIdentifier ) => id
+      case GreaterThan( id:LoadedIdentifier, LongIntLiteral( 0 ) ) => id
       case FunctionCall("is_substr", (id:LoadedIdentifier) :: StringLiteral( v ) :: _ ) => id
       case FunctionCall("is_substr", False() :: StringLiteral( v ) :: _ ) => False()
     }
@@ -212,7 +212,7 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
 
   val plainIntegerRule = attempt {
     rule{
-      case IntLiteral( 0 ) => False()
+      case LongIntLiteral( 0 ) => False()
     }
   }
 
@@ -246,7 +246,7 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
       case t:LoadedIdentifier => t
       case t:Not => t
     }
-  }, { s => all(all(failure)) }
+  }, { s => all(all(fail)) }
   )
 
   val returnTrue = rule{
@@ -258,7 +258,7 @@ class CDLBooleanTransformation( model: IML ) extends Rewriter{
   def impls( interfaceID : String ) : List[LoadedIdentifier] =
     model.nodesById.values.
       filter( _.implements contains Identifier( interfaceID ) ).
-        map( x => LoadedIdentifier( x.id, x.cdlType, x.flavor ) )
+        map( x => LoadedIdentifier( x.id, x.cdlType, x.flavor ) ).toList
 
 
 }

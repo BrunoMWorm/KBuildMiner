@@ -19,14 +19,15 @@ package gsd.cdl.ase10
  * along with CDLTools.  If not, see <http://www.gnu.org/licenses/>.
  */
 import collection.immutable.PagedSeq
-import model._
-import statistics.CDLModel
 import util.parsing.input.PagedSeqReader
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import scala.collection.mutable
-import java.io.{Writer, FileWriter, PrintWriter, File}
+import java.io.{FileWriter, PrintWriter, File}
+import gsd.cdl.model._
+import gsd.cdl.statistics.CDLModel
+import gsd.cdl.parser.combinator.IMLParser
 
-object EcosAllArchitecturesStatisticsMain extends IMLParser with Rewriter{
+object EcosAllArchitecturesStatisticsMain extends IMLParser{
 
   val flavors = List( NoneFlavor, BoolFlavor, BoolDataFlavor, DataFlavor )
   val types = List ( PackageType, ComponentType, OptionType, InterfaceType )
@@ -104,7 +105,7 @@ object EcosAllArchitecturesStatisticsMain extends IMLParser with Rewriter{
     val allInterfaces = allNodes.filter( _.cdlType == InterfaceType )
     val constrainedInterfaces = allInterfaces.filter( !_.reqs.isEmpty )
     val interestingInterfaces = constrainedInterfaces.filter( x => collectl{
-             case IntLiteral( n ) if( n != 0 && n != 1 ) => x.id
+             case LongIntLiteral( n ) if( n != 0 && n != 1 ) => x.id
     }(x.reqs).size > 0 )
 
     println( "=======================================\nInteresting interfaces: " )

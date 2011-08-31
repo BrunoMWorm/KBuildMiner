@@ -19,8 +19,8 @@
 
 package gsd.cdl
 
-import gsd.graph.{DirectedGraph, Graph}
 import java.io.{PrintWriter, FileWriter, File}
+import parser.EcosIml.CupParser
 
 object CDLModelVisualizationMain extends optional.Application{
 
@@ -39,22 +39,13 @@ object CDLModelVisualizationMain extends optional.Application{
     val _iml = getArg( iml, "../../ecos/output/pc_vmWare_iml.txt" )
     val _out = getArg( out, "output/pc_vmWare.gv" )
 
-    val model = EcosIML.parseFile( _iml )
-
-    val vertexMap = Map() ++ model.nodesById.keySet.toList.zip((1 to model.nodesById.size).toList)
+    val model = CupParser parseFile _iml
 
     val edges = model.childParentMap.map( x => ( EcosFeature( x._1 ), EcosFeature( x._2 ) ) )
-
-//    val g = DirectedGraph[Int](
-//      Set( vertexMap.values.toList:_* ),
-//      Graph.toMultiMap( edges ) ).reverseEdges
-
-    val g = DirectedGraph[EcosFeature](
-      Set( model.nodesById.keySet.map( EcosFeature ).toList: _* ),
-      Graph.toMultiMap( edges ) ).reverseEdges
+    val features = edges.keySet ++ edges.values.toSet
 
     val o = new PrintWriter( new FileWriter( _out ) )
-    o.println( g.toGraphvizString )
+    o.println( toGraphvizString( edges, features ) )
     o.close
 
   }
@@ -67,5 +58,28 @@ object CDLModelVisualizationMain extends optional.Application{
   
   def name( s: String ): String =
     s.split("_").last
+
+  def toGraphvizString( edges: Map[EcosFeature,EcosFeature], vertices: Set[EcosFeature]) = {
+    val sb = new StringBuilder
+
+    //Header
+    sb append "digraph {\n"
+    sb append "graph [" append "rankdir=" append "TB" append "]\n"
+    sb append "node [" append "shape=" append "box" append "]\n"
+
+    //Vertices
+    val vertexMap = Map() ++ vertices.toList.zip((1 to vertices.size).toList)
+    vertexMap.foreach { case(v,i) =>
+      sb append i append "[label=\"" append v.toString.replace("\"", "\\\"") append "\"]\n"
+    }
+
+    edges.foreach { case (source, target) =>
+      sb append vertexMap(target) append "->" append vertexMap(source) append "\n"
+    }
+
+    sb append "}"
+
+    sb.toString
+  }
 
 }

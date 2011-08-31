@@ -18,16 +18,15 @@ package gsd.cdl.ase10
  * You should have received a copy of the GNU General Public License
  * along with CDLTools.  If not, see <http://www.gnu.org/licenses/>.
  */
-import kiama.rewriting.Rewriter
-import model._
+import org.kiama.rewriting.Rewriter._
 import util.parsing.input.PagedSeqReader
 import collection.immutable.PagedSeq
-import statistics.CDLModel
 import java.io.{PrintWriter, File}
 import scala.collection.mutable
-import gsd.cdl.statistics.CDLModel
+import gsd.cdl.parser.combinator.IMLParser
+import gsd.cdl.model._
 
-object EcosI386ExpressionAnalysis extends IMLParser with Rewriter{
+object EcosI386ExpressionAnalysis extends IMLParser{
 
   var nodesById = Map[String,Node]()
   var childParentMap = Map[String,String]()
@@ -60,11 +59,11 @@ object EcosI386ExpressionAnalysis extends IMLParser with Rewriter{
     val featureConstraints = collectl{
       case Node( id,_,_,_,_,dv,ca,lv,re,ai,_,_) => {
         var el = List[Constraint]()
-        if( ca != None ) el += Calculated( ca.get )
-        if( dv != None ) el += DefaultValue( dv.get )
-        if( lv != None ) el += LegalValues( lv.get )
-        re.foreach( el += Requires( _ ) )
-        ai.foreach( el += ActiveIf( _ ) )
+        if( ca != None ) el = Calculated( ca.get ) :: el
+        if( dv != None ) el = DefaultValue( dv.get ) :: el
+        if( lv != None ) el = LegalValues( lv.get ) :: el
+        re.foreach( x => el = Requires( x ) :: el )
+        ai.foreach( x => el = ActiveIf( x ) :: el )
         (id, el)
       }
     }( topLevelNodes )
@@ -156,7 +155,7 @@ object EcosI386ExpressionAnalysis extends IMLParser with Rewriter{
 
     val withComputedDVProperty = withDefaultValueProperty.remove( _.defaultValue.get match {
               case StringLiteral(_) => true
-              case IntLiteral(_) => true
+              case LongIntLiteral(_) => true
               case True() => true
               case False() => true
               case _ => false

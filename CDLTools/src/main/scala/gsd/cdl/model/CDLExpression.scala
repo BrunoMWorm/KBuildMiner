@@ -52,12 +52,17 @@ sealed abstract class CDLExpression{
 
 case class NonBoolean( e : CDLExpression ) extends CDLExpression
 
-case class StringLiteral(value : String) extends CDLExpression {
+class Literal extends CDLExpression
+
+case class StringLiteral(value : String) extends Literal {
 //  override def toString = value
-//  override def toString = "\"" + value + "\""
+  override def toString = "\"" + value + "\""
 }
-case class IntLiteral(value : Int) extends CDLExpression {
-//  override def toString = "" + value
+case class LongIntLiteral(value : Long) extends Literal {
+  override def toString = "" + value
+}
+case class DoubleLiteral(value : Double) extends Literal {
+  override def toString = "" + value
 }
 case class Identifier(id : String) extends CDLExpression {
   override def toString = id
@@ -112,6 +117,16 @@ case class Minus(left :CDLExpression, right : CDLExpression)
 case class Dot(left : CDLExpression, right : CDLExpression)
         extends BinaryExpression(left, right, ".")
 
+case class BtAnd(left : CDLExpression, right : CDLExpression)
+        extends BinaryExpression(left, right, "&")
+case class BtOr(left : CDLExpression, right : CDLExpression)
+        extends BinaryExpression(left, right, "|")
+case class BtXor(left : CDLExpression, right : CDLExpression)
+        extends BinaryExpression(left, right, "^")
+case class BtLeft(left : CDLExpression, right : CDLExpression)
+        extends BinaryExpression(left, right, "<<")
+case class BtRight(left : CDLExpression, right : CDLExpression)
+        extends BinaryExpression(left, right, ">>")
 case class Times(left :CDLExpression, right : CDLExpression)
         extends BinaryExpression(left, right, "*")
 case class Div(left :CDLExpression, right : CDLExpression)

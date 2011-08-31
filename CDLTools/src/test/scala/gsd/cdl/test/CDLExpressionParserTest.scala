@@ -19,12 +19,11 @@
  */
 package gsd.cdl.test
 
-import gsd.cdl.CDLExpression._
-
-import gsd.cdl.model._
 import org.junit.runner.RunWith
-import org.scalatest.junit.{JUnitRunner}
+import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
+import gsd.cdl.model._
+import gsd.cdl.parser.combinator.CDLExpressionParser._
 
 @RunWith(classOf[JUnitRunner])
 class CDLExpressionParserTest extends FunSuite {
@@ -42,7 +41,7 @@ class CDLExpressionParserTest extends FunSuite {
   }
 
   test("identifiers"){
-    assert( parseString("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1") === Minus( Identifier("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS"), IntLiteral(1) ) )
+    assert( parseString("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1") === Minus( Identifier("CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS"), LongIntLiteral(1) ) )
   }
 
   test( "inequality" ){
