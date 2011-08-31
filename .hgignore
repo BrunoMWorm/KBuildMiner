@@ -1,3 +1,8 @@
 glob:CDLTools/.idea
 glob:CDLTools/CDLTools.iml
 glob:CDLTools/target
+glob:KBuildMiner/.idea
+glob:KBuildMiner/KBuildMiner.iml
+glob:KBuildMiner/target
+glob:iml-parser/target
+glob:iml-parser/.idea
