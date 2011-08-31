@@ -1,0 +1,9 @@
+option LEGAL_VALUES {
+  // Currently, this will be interpreted as
+  // MinusExpression(-1, MinusExpression(-2, -3))
+  legal_values[X ? "a" : -3 + 5]
+}
+
+option X {
+  flavor bool
+}

@@ -1,0 +1,5 @@
+option LEGAL_VALUES {
+  // Currently, this will be interpreted as
+  // MinusExpression(-1, MinusExpression(-2, -3))
+  legal_values[-- -1 -- -2 -- -3]
+}

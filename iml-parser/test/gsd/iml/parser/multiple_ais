@@ -1,0 +1,7 @@
+option CYGBLD_IO_USB_SLAVE_USBTEST{
+  display "Build the main USB test program"
+  implements [CYGINT_IO_USB_SLAVE_CLIENTS ]
+  active_if [is_substr(CYGPKG_IO_USB_SLAVE_TESTS, " tests/usbtarget") ]
+  active_if [CYGFUN_KERNEL_API_C CYGFUN_KERNEL_THREADS_TIMER !CYGINT_KNEREL_SCHEDULER_UNIQUE_PRIORITIES ]
+  active_if [CYGPKG_LIBC_STDIO CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS ]
+}

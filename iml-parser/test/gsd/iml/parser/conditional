@@ -1,0 +1,4 @@
+option C {
+ default_value[E == B ? A : D]
+ flavor data
+}
