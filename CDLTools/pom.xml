@@ -24,7 +24,7 @@
     <version>0.2</version>
 
     <properties>
-        <scala.version>2.9.0-1</scala.version>
+        <scala.version>2.9.1</scala.version>
     </properties>
 
     <repositories>
@@ -78,8 +78,8 @@
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest</artifactId>
-            <version>1.0</version>
+            <artifactId>scalatest_2.9.1</artifactId>
+            <version>1.6.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
