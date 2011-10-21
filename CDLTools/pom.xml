@@ -88,11 +88,6 @@
             <version>4.7</version>
             <scope>test</scope>
         </dependency>
-        <!--dependency>
-            <groupId>gsd</groupId>
-            <artifactId>graph</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
-        </dependency-->
         <dependency>
           <groupId>com.googlecode</groupId>
           <artifactId>kiama_2.9.0-1</artifactId>

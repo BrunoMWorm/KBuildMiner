@@ -28,93 +28,85 @@ import collection.JavaConversions._
 import gsd.cdl.statistics._
 import gsd.cdl.parser.combinator.IMLParser
 import gsd.cdl.model._
+import gsd.cdl.parser.EcosIml
+import gsd.cdl.AnalysisHelpers
 
 object EcosI386StatisticsMain extends IMLParser{
 
-  var nodesById = Map[String,Node]()
-  var childParentMap = Map[String,String]()
+//  var nodesById = Map[String,Node]()
+//  var childParentMap = Map[String,String]()
+
+  val model = EcosIml.CupParser.parseFile( "input/iml/pc_vmWare.iml" )
 
   def main( args: Array[String] ){
-    parseAll(cdl, new PagedSeqReader(PagedSeq fromFile "../ecos/output/pc_vmWare_iml.txt")) match{
-      case Success(res,_) => doCollectStatistics( res, "pc_vmWare" )
-      case x => println( "failure: " + x )
-    }
+
+    doCollectStatistics( model, "pc_vmWare" )
   }
 
-  def doCollectStatistics( topLevelNodes:List[Node], target : String ) : CDLModel = {
+  def doCollectStatistics( model: IML, target : String ) : CDLModel = {
     val ret = new CDLModel()
     ret.target = target
 
-    val allNodes = collectl{
-      case n:Node => nodesById += (n.id -> n); n
-    }(topLevelNodes)
-
-    val rootNode = Node( "root", PackageType, "Our synthetic root node", None,
-                        NoneFlavor, None, None, None, List(), List(), List(), topLevelNodes )
-
-    everywheretd ( query {
-        case Node(n,_,_,_,_,_,_,_,_,_,_,children) => children.foreach( x => childParentMap += ( x.id -> n ) )
-    } ) (rootNode)
-
     // leave-depth histogram
-    val leaves = allNodes.filter( x => !childParentMap.values.contains( x.id ) )
-//    val leaves = collects{
-//      case node@Node(_,_,_,_,_,_,_,_,_,_,_,children) if children.isEmpty => node
-//    }(topLevelNodes)
+    val leaves = model.allNodes.filter( x => !model.childParentMap.values.contains( x.id ) )
     println( leaves.size )
     leaves.foreach( println )
     outputHistogram( ret,
-      leaves.map( x => depth( x.id, childParentMap ) ),
+      leaves.map( x => depth( x.id, model.childParentMap ) ),
       "output/histograms/leaf_depth_" + ret.target + ".csv" )
 
     // branching factor histogram
     outputHistogram( ret,
-      allNodes.map( _.nchildren.size ).filter( _ != 0 ),
+      model.allNodes.map( _.nchildren.size ).filter( _ != 0 ),
       "output/histograms/branching_" + ret.target + ".csv" )
 
 
-    ret.nodes = allNodes.size
-    ret.userChangeable = allNodes.
+    ret.nodes = model.allNodes.size
+    ret.userChangeable = model.allNodes.
             filter( x => x.cdlType == ComponentType || x.cdlType == OptionType || x.cdlType == PackageType ).
             filter( x => x.flavor == BoolFlavor || x.flavor == BoolDataFlavor || x.flavor == DataFlavor ).
             filter( x => x.calculated == None ).
             size
 
-    val derived = allNodes.
+    val derived = model.allNodes.
             filter( x =>  x.cdlType == InterfaceType || x.calculated != None || x.flavor == NoneFlavor )
     ret.derived = derived.size
 
-    ret.withChangeableDataValue = allNodes.
+    ret.withChangeableDataValue = model.allNodes.
             filter( x => x.cdlType == ComponentType || x.cdlType == OptionType ).
             filter( x => x.flavor == BoolDataFlavor || x.flavor == DataFlavor ).
             filter( x => x.calculated == None ).
             size
 
-//    allNodes.foreach( x => println( x.reqs.size + ";  " + x.activeIfs.size + ";  " + x.calculated ) )
+//    model.allNodes.foreach( x => println( x.reqs.size + ";  " + x.activeIfs.size + ";  " + x.calculated ) )
 
-    ret.mandatory = allNodes.
+    ret.mandatory = model.allNodes.
             filter( x => x.cdlType != InterfaceType ).
             filter( x => ( x.reqs.isEmpty && x.activeIfs.isEmpty && x.calculated == None ) ).
             filter( x => ( x.flavor == NoneFlavor || x.flavor == DataFlavor || x.cdlType == PackageType ) ).
             size
 
-    ret.nodesWithAIconstraints = allNodes.filter( x => !x.activeIfs.isEmpty ).size
-    ret.nodesWithReqsConstraints = allNodes.filter( x => !x.reqs.isEmpty ).size
+    ret.nodesWithAIconstraints = model.allNodes.filter( x => !x.activeIfs.isEmpty ).size
+    ret.nodesWithReqsConstraints = model.allNodes.filter( x => !x.reqs.isEmpty ).size
 
-    ret.dataNodesWhichAreTests = allNodes.
+    ret.dataNodesWhichAreTests = model.allNodes.
             filter( x => x.flavor == BoolDataFlavor || x.flavor == DataFlavor ).
             filter( x => x.id.indexOf( "TESTS" ) > 0 ).
             size
 
     println( "\n===========\n groups:")
-    val xorGroups = findGroups( allNodes, rootNode, "xor" )
+    val orGroups = AnalysisHelpers.findGroups( model, "or" )
+    println( orGroups.size + " or groups" )
+    val xorGroups = AnalysisHelpers.findGroups( model, "xor" )
     println( xorGroups.size + " xor groups" )
 //    printGroups( xorGroups, "xor" )
 
-    val mutexGroups = findGroups( allNodes, rootNode, "mutex" )
-    val mutexWithMoreThanOneChild = for( g <- mutexGroups; gelem <- g; if(gelem._2.size > 1) ) yield (gelem._1.id, gelem._2)
+    val mutexGroups = AnalysisHelpers.findGroups( model, "mutex" )
+//    val mutexWithMoreThanOneChild = for( g <- mutexGroups; gelem <- g; if(gelem._2.size > 1) ) yield (gelem._1.id, gelem._2)
+    val mutexWithMoreThanOneChild = mutexGroups.filter( _._2.size > 1 )
+
     println( mutexGroups.size + " mutex groups, but only " + mutexWithMoreThanOneChild.size + " mutex groups with more than one child:" )
-    printGroups( mutexGroups, "mutex" )
+    printGroups2( mutexGroups, "mutex" )
 
 
     println( "# of all nodes: " + ret.nodes )
@@ -131,16 +123,16 @@ object EcosI386StatisticsMain extends IMLParser{
     rafaelOutput
     stevenCSVOutput
 
-    enumerationAnalysis( allNodes, ret )
+    enumerationAnalysis( model.allNodes, ret )
 
-    expressionAnalysis( topLevelNodes, ret )
+    expressionAnalysis( model.topLevelNodes, ret )
     
     // interface cross-cutting analysis
-    interfaceCrossCuttingAnalysis( allNodes, ret )
+    interfaceCrossCuttingAnalysis( model.allNodes, ret )
 
     println("Packages: ")
     println("==============================")
-    allNodes.filter( _.cdlType == PackageType ).foreach( x => println( x.id ) )
+    model.allNodes.filter( _.cdlType == PackageType ).foreach( x => println( x.id ) )
 
     ret
   }
@@ -152,50 +144,24 @@ object EcosI386StatisticsMain extends IMLParser{
       }
   }
 
-  def findGroups( allNodes : List[Node], rootNode : Node, gtype : String ) = collectl{
+  def printGroups2( groups: List[Tuple2[Node,List[Node]]], gtype: String ){
+    for( g <- groups ){
+      println( gtype + " group " + g._1.id + ":")
+      g._2.foreach( c => println( "     " + c.id ) )
+    }
 
-        case Node(n,_,_,_,_,_,_,_,_,_,_,children) => {
-
-          val groupedNodesOnThisLevel = mutable.Map[Node,List[Node]]()
-
-          for( c <- children ){
-            val implements = c.implements.map( ident => ident match {
-                                                          case Identifier( id ) => nodesById.get( id )
-                                                          case _ => None } ).
-                                                filter( _ != None ).map( _.get )
-
-            val constrainedInterfaces = gtype match{
-              case "xor" => implements.filter( interf =>
-                              interf.reqs.contains( Eq( Identifier(interf.id), LongIntLiteral( 1 ) ) ) ||
-                              interf.reqs.contains( Eq( LongIntLiteral( 1 ), Identifier(interf.id) ) ) )
-              case "mutex" => implements.filter( interf =>
-                              interf.reqs.contains( LessThanOrEq( Identifier(interf.id), LongIntLiteral( 1 ) ) ) ||
-                              interf.reqs.contains( GreaterThanOrEq( LongIntLiteral( 1 ), Identifier(interf.id) ) ) )
-            }
+  }
 
 
-            constrainedInterfaces.foreach( ri => groupedNodesOnThisLevel.get( ri ) match {
-              case Some( i ) => groupedNodesOnThisLevel+=( ri -> ( c :: i ) )
-              case None => groupedNodesOnThisLevel += ( ri -> ( c :: Nil ) )
-            })
-
-          }
-
-          groupedNodesOnThisLevel
-      }
-
-    }(rootNode).filter( !_.isEmpty )
-
-
-  def interfaceCrossCuttingAnalysis( allNodes : List[Node], model : CDLModel ){
+  def interfaceCrossCuttingAnalysis( allNodes : List[Node], cdlModel : CDLModel ){
 
     val allInterfaces = allNodes.filter( _.cdlType == InterfaceType )
-    outputHistogram( model, allInterfaces.map( x => impls( x.id ).size ), "output/histograms/numOfImplementations_" + model.target + ".csv" )
+    outputHistogram( cdlModel, allInterfaces.map( x => impls( x.id ).size ), "output/histograms/numOfImplementations_" + cdlModel.target + ".csv" )
 
     // how many of the implementations are siblings?
     var interfacesWithSiblingImplementations = List[Node]()
     for( i <- allInterfaces ){
-      val parents = impls( i.id ).map( x => childParentMap.get( x.id ) ).map( _.get)
+      val parents = impls( i.id ).map( x => model.childParentMap.get( x.id ) ).map( _.get)
       if( !parents.isEmpty && parents.forall( x => x == parents( 0 )) )
         interfacesWithSiblingImplementations = i :: interfacesWithSiblingImplementations
     }
@@ -203,13 +169,13 @@ object EcosI386StatisticsMain extends IMLParser{
 
     // now, what's the relationship between interfaces and their implementations?
     val interfAndImplAreSiblings = interfacesWithSiblingImplementations.
-            filter( x => childParentMap.get( x.id ).get == childParentMap.get( impls( x.id )(0).id ).get )
+            filter( x => model.childParentMap.get( x.id ).get == model.childParentMap.get( impls( x.id )(0).id ).get )
 
     val interfAreParentToImpl = interfacesWithSiblingImplementations.
-            filter( x => x.id == childParentMap.get( impls( x.id )(0).id ).get )
+            filter( x => x.id == model.childParentMap.get( impls( x.id )(0).id ).get )
 
     val interfAreAChildOfOneImpl = interfacesWithSiblingImplementations.
-            filter( x => impls( x.id ).map( _.id ).contains( childParentMap.get( x.id ) ) )
+            filter( x => impls( x.id ).map( _.id ).contains( model.childParentMap.get( x.id ) ) )
 
     println( interfAndImplAreSiblings.size + " interfaces are siblings to their implementations")
     println( interfAreParentToImpl.size + " interfaces are parents of their implementations")
@@ -277,9 +243,9 @@ object EcosI386StatisticsMain extends IMLParser{
   def findPackage( node : Node ): Option[Node] = {
     node match {
       case Node(_,PackageType,_,_,_,_,_,_,_,_,_,_) => Some( node )
-      case _            => childParentMap.get( node.id ) match{
+      case _            => model.childParentMap.get( node.id ) match{
                               case Some("root") => None
-                              case Some( n )  => findPackage( nodesById.get(n).get )
+                              case Some( n )  => findPackage( model.nodesById.get(n).get )
                               case _ => sys.error( "No parent node found?!" )
                            }
     }
@@ -371,11 +337,11 @@ object EcosI386StatisticsMain extends IMLParser{
 	}
 
     def impls( interfaceID : String ) =
-      nodesById.values.filter( _.implements contains Identifier( interfaceID ) ).toList
+      model.nodesById.values.filter( _.implements contains Identifier( interfaceID ) ).toList
 
 
 
-  def expressionAnalysis( topLevelNodes : List[Node], model : CDLModel ){
+  def expressionAnalysis( topLevelNodes : List[Node], cdlModel : CDLModel ){
     println( "\n==================================")
     println( "expression analysis" )
     // go and get all expressions
@@ -405,21 +371,21 @@ object EcosI386StatisticsMain extends IMLParser{
     println( "before kiama...")
     val allLoadedIdentifiers = collects{
       case Identifier( x ) => x
-    }( allExpressions ).filter( nodesById.keySet contains _ )
+    }( allExpressions ).filter( model.nodesById.keySet contains _ )
 
     println( "Ok, so the total number of (non-conjoined) expressions is: " + allExpressions.size )
     println( "# of positive binary implications: " + positiveBinaryImplication.size )
     println( "# of negative binary implications: " + negativeBinaryImplication.size )
     println( "# of features participating in cross-tree constraints: " +
-            allLoadedIdentifiers.size + "/" + nodesById.keySet.size +
-            " (" + ( ( allLoadedIdentifiers.size.toFloat / nodesById.keySet.size.toFloat ) * 100 ).toInt + "%)" )
+            allLoadedIdentifiers.size + "/" + model.nodesById.keySet.size +
+            " (" + ( ( allLoadedIdentifiers.size.toFloat / model.nodesById.keySet.size.toFloat ) * 100 ).toInt + "%)" )
     println
     
     val numberOfIdentifiers = allExpressions.map( x => collectl{
       case Identifier( v ) => v
     }(x).size )
 
-    outputHistogram( model, numberOfIdentifiers, "output/histograms/referenced_features_in_expressions_" + model.target + ".csv" )
+    outputHistogram( cdlModel, numberOfIdentifiers, "output/histograms/referenced_features_in_expressions_" + cdlModel.target + ".csv" )
 
     val nonBoolean = allExpressions.filter( e => ( rewrite( IsItCompletelyBoolean )(e) match {
         case NonBoolean( _ ) => true
@@ -500,7 +466,7 @@ object EcosI386StatisticsMain extends IMLParser{
 
   def stevenCSVOutput{
     val out = new PrintWriter( new FileWriter( "output/ecos_hierarchy.csv") )
-    for( cp <- childParentMap ){
+    for( cp <- model.childParentMap ){
       val c = cp._1
       val p = if( cp._2 == "root" ) "^" else cp._2
       out.println( c + "," + p )  
@@ -511,19 +477,22 @@ object EcosI386StatisticsMain extends IMLParser{
   def rafaelOutput(){
     val jc = JAXBContext.newInstance( classOf[Feature], classOf[Features] );
     val unmarshaller = jc.createUnmarshaller();
-    val features = unmarshaller.unmarshal( new File( "../ecos/output/pc_vmWare_descriptions.xml" ) ).asInstanceOf[Features]
+    val features = unmarshaller.unmarshal( new File( "input/descriptions/pc_vmWare_descriptions.xml" ) ).asInstanceOf[Features]
 
     val available = features.feature.map( _.id )
-    val missing = nodesById.keySet.filter( x => !( available contains x ) ) 
+    val missing = model.nodesById.keySet.filter( x => !( available contains x ) )
 
     for( m <- missing )
       features.feature.add( new Feature( m ) )
 
     for( x <- features.feature ){
-      val fullFeature = nodesById.get( x.id ).get
+      val fullFeature = model.nodesById.get( x.id ).get
       if( fullFeature.display != "" )
         x.prompt = fullFeature.display.substring( 1, fullFeature.display.length - 1 )
-      x.parent = childParentMap.get( x.id ).get
+      x.parent = model.childParentMap.get( x.id ) match{
+        case Some(p) => p
+        case None => null
+      }
       x.isParentCandidate = fullFeature.cdlType != OptionType
     }
 

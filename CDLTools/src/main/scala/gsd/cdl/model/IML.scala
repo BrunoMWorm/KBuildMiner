@@ -109,10 +109,38 @@ private object TraverseHelper{
 
 trait ImlTreeAttributes{
 
+  val isRoot: Node ==> Boolean =
+    attr{
+      case n:Node => n.parent[Node] == null
+    }
+
+  val isLeaf: Node ==> Boolean =
+    attr{
+      case n:Node => n.children.isEmpty
+    }
+
   val numchildren: Node ==> Int =
     attr{
       case Node(_,_,_,_,_,_,_,_,_,_,_,List()) => 0
       case Node(_,_,_,_,_,_,_,_,_,_,_,children) => children.size + ( 0 /: children )( (a,b) => a + (b->numchildren) )
+    }
+
+  val depth: Node ==> Int =
+    attr{
+      case n:Node =>
+        if( n->isRoot )
+          0
+        else
+          n.parent[Node]->depth + 1
+    }
+
+  val siblings: Node ==> List[Node] =
+    attr{
+      case n: Node =>
+        if ( n->isRoot )
+          Nil
+        else
+          n.parent[Node].nchildren.filterNot( _ == n )
     }
 
 }
