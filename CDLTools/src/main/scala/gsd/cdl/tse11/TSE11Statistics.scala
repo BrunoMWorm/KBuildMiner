@@ -27,14 +27,14 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
 
   lazy val features = model.allNodes
 
-  lazy val switchFeatures = features.filter( f => f.flavor == BoolFlavor || f.flavor == BoolDataFlavor )
-  lazy val dataFeatures = features.filter( f => f.flavor == DataFlavor || f.flavor == BoolDataFlavor )
+  lazy val switchFeatures = features.filter( f => f.flavor == BoolFlavor || f.flavor == BoolDataFlavor ).size
+  lazy val dataFeatures = features.filter( f => f.flavor == DataFlavor || f.flavor == BoolDataFlavor ).size
 
   // FIXME
   lazy val numericDataFeatures = 328
   lazy val stringDataFeatures = 353
 
-  lazy val noneFeatures = features.filter( _.flavor == NoneFlavor )
+  lazy val noneFeatures = features.filter( _.flavor == NoneFlavor ).size
 
   // all groups should contain more than one child
   lazy val orGroups = AnalysisHelpers.findGroups( model, "or" ).filter( _._2.size > 1)
