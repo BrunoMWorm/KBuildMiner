@@ -33,15 +33,15 @@ case class IML( topLevelNodes: List[Node] ){
    */
   val rootNode = _maps._1
   /**
-   * Map contains no root node in the key set, but in the value set
+   * Map contains root node
    */
   val childParentMap = _maps._2
   /**
-   * Map contains no root node
+   * Map contains root node
    */
   val nodesById = _maps._3
   /**
-   * List contains no root node
+   * List contains root node
    */
   val allNodes = _maps._4
 
@@ -101,7 +101,7 @@ case class LegalValues( lv: LegalValuesOption ) extends Constraint
 private object TraverseHelper{
 
   def getMaps( topLevelNodes: List[Node] ) ={
-    val rn = Node( "root", PackageType, "Synthetic root node", None,
+    val rn = Node( "root", ComponentType, "Synthetic root node", None,
                       NoneFlavor, None, None, None, List(), List(), List(), topLevelNodes )
     var cpm = Map[String,String]()
     var nbi = Map[String,Node]()
@@ -110,12 +110,9 @@ private object TraverseHelper{
     everywheretd( query {
       case node@Node(n,_,_,_,_,_,_,_,_,_,_,children) => {
         children.foreach( x => cpm += ( x.id -> n ) )
-        if( node != rn ){
-          an = node :: an
-          nbi += (n -> node)
-        }
-      }
-    } )(rn)
+        nbi += (n -> node)
+        an = node :: an
+      } } )(rn)
 
     (rn, cpm, nbi, an)
   }
