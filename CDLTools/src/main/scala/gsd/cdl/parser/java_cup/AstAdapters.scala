@@ -160,7 +160,12 @@ object ImlExpressionToCDLExpression {
 
     if (e.isInstanceOf[IdentifierExpression]) {
       val exp = e.asInstanceOf[IdentifierExpression]
-      return new Identifier(exp.getId)
+      if( exp.getId equalsIgnoreCase "true" )
+        return True()
+      else if( exp.getId equalsIgnoreCase "false" )
+        return False()
+      else
+        return new Identifier(exp.getId)
     }
 
     if (e.isInstanceOf[LongLiteralExpression]) {
