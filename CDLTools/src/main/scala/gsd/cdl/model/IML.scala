@@ -28,9 +28,21 @@ case class IML( topLevelNodes: List[Node] ){
 
   private val _maps = TraverseHelper getMaps topLevelNodes
 
+  /**
+   * The synthetic root node
+   */
   val rootNode = _maps._1
+  /**
+   * Map contains no root node in the key set, but in the value set
+   */
   val childParentMap = _maps._2
+  /**
+   * Map contains no root node
+   */
   val nodesById = _maps._3
+  /**
+   * List contains no root node
+   */
   val allNodes = _maps._4
 
 }
@@ -98,8 +110,10 @@ private object TraverseHelper{
     everywheretd( query {
       case node@Node(n,_,_,_,_,_,_,_,_,_,_,children) => {
         children.foreach( x => cpm += ( x.id -> n ) )
-        nbi += (n -> node)
-        an = node :: an
+        if( node != rn ){
+          an = node :: an
+          nbi += (n -> node)
+        }
       }
     } )(rn)
 
