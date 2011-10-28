@@ -27,7 +27,14 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
 
   lazy val features = model.allNodes
 
+  lazy val switchFeatures = features.filter( f => f.flavor == BoolFlavor || f.flavor == BoolDataFlavor )
   lazy val dataFeatures = features.filter( f => f.flavor == DataFlavor || f.flavor == BoolDataFlavor )
+
+  // FIXME
+  lazy val numericDataFeatures = 328
+  lazy val stringDataFeatures = 353
+
+  lazy val noneFeatures = features.filter( _.flavor == NoneFlavor )
 
   // all groups should contain more than one child
   lazy val orGroups = AnalysisHelpers.findGroups( model, "or" ).filter( _._2.size > 1)
@@ -66,6 +73,10 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
   lazy val minSiblingsAll = ( 0 /: siblingMap.map( _._2.size ) )( scala.math.min )
   lazy val medianSiblingsAll = median( siblingMap.map( _._2.size ).toSeq ).toString
 
+  lazy val innerNodes = features.filter( _.nchildren.size > 0 ).size
+  lazy val leafNodes = features.filter( _.nchildren.isEmpty ).size
+  lazy val oneChildNodes = features.filter( _.nchildren.size == 1 ).size
+  lazy val twoChildNodes = features.filter( _.nchildren.size == 2 ).size
 
 
   // constraints
@@ -75,9 +86,9 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
   lazy val havingVisibilityCondition = features filterNot { _.activeIfs.isEmpty }
 
   lazy val featuresWithExplicitDefault = features filterNot { _.defaultValue == None }
-  lazy val featuresWithExplicitDefaultUsingLiterals = featuresWithExplicitDefault filter {
-    _.defaultValue.get.isInstanceOf[Literal]
-  }
+  lazy val featuresWithExplicitDefaultUsingLiterals = featuresWithExplicitDefault filter { f => {
+    val default = f.defaultValue.get
+    default.isInstanceOf[Literal] || default == True() || default == False() }}
   lazy val featuresWithExplicitDefaultUsingExpressions = featuresWithExplicitDefault filterNot {
     featuresWithExplicitDefaultUsingLiterals contains _
   }
@@ -90,8 +101,7 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
     derivedFeaturesUsingLiterals contains _
   }
 
-  def p( a: Int ) =
-    ( ( a.toFloat / features.size.toFloat ) * 100 ) toInt
+  def p( a: Int ) = scala.math.round( ( a.toFloat / features.size.toFloat ) * 100 )
 
   def median( s: Seq[Int] ) = {
     val (lower, upper) = s.sortWith(_<_).splitAt(s.size / 2)
