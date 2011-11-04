@@ -33,7 +33,7 @@ case class IML( topLevelNodes: List[Node] ){
    */
   val rootNode = _maps._1
   /**
-   * Map contains root node
+   * Map doesn't contain the root node, i.e. not in the keySet
    */
   val childParentMap = _maps._2
   /**
@@ -89,7 +89,7 @@ case object InterfaceType extends CDLType{
 }
 
 sealed abstract class Constraint
-case class Parent( i: Identifier ) extends Constraint
+case class Parent( i: Identifier ) extends Constraint // we use it as a wrapper for parent implications, it's not a concept of CDL
 case class Requires( e : CDLExpression ) extends Constraint
 case class ActiveIf( e : CDLExpression ) extends Constraint
 case class Calculated( e : CDLExpression ) extends Constraint

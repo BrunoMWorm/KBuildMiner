@@ -19,16 +19,23 @@
 
 package gsd.cdl.tse11
 
+import org.kiama.rewriting.Rewriter._
 import gsd.cdl.parser.EcosIml
 import gsd.cdl.AnalysisHelpers
 import gsd.cdl.model._
+import java.io.InputStream
 
-class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
+class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
 
   lazy val features = model.allNodes
+  lazy val rootNode = model.rootNode
 
   lazy val switchFeatures = features.filter( f => f.flavor == BoolFlavor || f.flavor == BoolDataFlavor ).size
   lazy val dataFeatures = features.filter( f => f.flavor == DataFlavor || f.flavor == BoolDataFlavor ).size
+
+  lazy val boolFlavorFeatures = features.filter( _.flavor == BoolFlavor ).size
+  lazy val booldataFlavorFeatures = features.filter( _.flavor == BoolDataFlavor ).size
+  lazy val noneFlavorFeatures = features.filter( _.flavor == NoneFlavor ).size
 
   // FIXME
   lazy val numericDataFeatures = 328
@@ -101,6 +108,32 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
     derivedFeaturesUsingLiterals contains _
   }
 
+  val featureConstraints = collectl{
+    case Node( id,cdlType,_,_,_,dv,ca,lv,re,ai,_,_) => {
+      var el = List[Constraint]()
+      model.childParentMap.get( id ) match{
+        case Some(n) => el = Parent( Identifier( n ) ) :: el
+        case None => ;
+      }
+      if( ca != None ) el = Calculated( ca get ) :: el
+      if( dv != None ) el = DefaultValue( dv get ) :: el
+      if( lv != None ) el = LegalValues( lv get ) :: el
+      re.foreach( e => el = Requires( e ) :: el )
+      ai.foreach( e => el = ActiveIf( e ) :: el )
+      (id, el)
+    }
+  }( model.rootNode )
+
+  /**
+   * all referenced IDs, including the parent feature
+   */
+  val referencedIDsPerFeature: Map[String,Set[String]] = featureConstraints map{ f =>
+    ( f._1, collects{
+      case Identifier( id ) => id
+    }(f._2) )
+  } toMap
+
+  // helpers
   def p( a: Int ) = scala.math.round( ( a.toFloat / features.size.toFloat ) * 100 )
 
   def median( s: Seq[Int] ) = {
@@ -111,6 +144,11 @@ class TSE11Statistics( model: IML ) extends ImlTreeAttributes{
 }
 
 object TSE11Statistics{
+
   def apply( file: String ) =
     new TSE11Statistics( EcosIml.CupParser.parseFile( file ) )
+
+  def apply( stream: InputStream ) =
+      new TSE11Statistics( EcosIml.CupParser.parseStream( stream ) )
+
 }

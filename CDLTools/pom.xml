@@ -111,7 +111,7 @@
         <dependency>
             <groupId>gsd</groupId>
             <artifactId>iml-parser</artifactId>
-            <version>dev_1.0</version>
+            <version>dev_1.1</version>
         </dependency>
     </dependencies>
 </project>
