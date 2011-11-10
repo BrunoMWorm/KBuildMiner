@@ -35,7 +35,7 @@ object EcosI386BooleanTranslationMain extends IMLParser{
 
 //    parseAll(cdl, new PagedSeqReader(PagedSeq fromFile "iml_temp.txt")) match{
     parseAll(cdl, new PagedSeqReader(PagedSeq fromFile "../ecos/output/pc_vmWare_iml.txt")) match{
-      case Success(res,_) => doRewritingAndExport( IML( res ) )
+      case Success(res,_) => doRewritingAndExport( IML( res, "pc_vmWare" ) )
       case x => println( "failure: " + x )
     }
 

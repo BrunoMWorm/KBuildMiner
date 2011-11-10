@@ -24,7 +24,7 @@ import org.kiama.attribution.Attribution._
 import org.kiama._
 import org.kiama.rewriting.Rewriter._
 
-case class IML( topLevelNodes: List[Node] ){
+case class IML( topLevelNodes: List[Node], modelName: String ){
 
   private val _maps = TraverseHelper getMaps topLevelNodes
 

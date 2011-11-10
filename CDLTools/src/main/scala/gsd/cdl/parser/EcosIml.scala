@@ -25,7 +25,7 @@ import gsd.iml.parser.ImlParser
 import java_cup.ImlFeatureListToImlNodeList
 import collection.immutable.PagedSeq
 import util.parsing.input.PagedSeqReader
-import java.io.InputStream
+import java.io.{File, InputStream}
 
 object EcosIml {
 
@@ -39,10 +39,10 @@ object EcosIml {
   object CupParser{
     
     def parseFile( file: String ) =
-      IML( ImlFeatureListToImlNodeList( ImlParser parse file ) )
+      IML( ImlFeatureListToImlNodeList( ImlParser parse file ), getModelName( file ) )
     
-    def parseStream( in: InputStream ) =
-      IML( ImlFeatureListToImlNodeList( ImlParser parse in ) )
+    def parseStream( in: InputStream, modelName: String ) =
+      IML( ImlFeatureListToImlNodeList( ImlParser parse in ), modelName )
   }
 
   /**
@@ -51,17 +51,25 @@ object EcosIml {
    */
   object CombinatorParser extends IMLParser{
 
-    def parseString(s : String) =
+    def parseString(s : String, modelName: String) =
       parseAll(cdl, s) match {
-        case Success(res,_) => IML( res )
+        case Success(res,_) => IML( res, modelName )
         case x => sys.error( x toString )
       }
 
   def parseFile(file : String) =
     parseAll(cdl, new PagedSeqReader(PagedSeq fromFile file)) match {
-      case Success(res,_) => IML( res )
+      case Success(res,_) => IML( res, getModelName( file ) )
       case x => sys.error( x toString )
     }
   }
+
+  val fn = """(.*)\.[a-z]+""".r
+
+  private def getModelName( file: String ) =
+    new File(file).getName match{
+      case fn( model ) => model
+      case _ => sys.error( "Cannot get model name from file name: " + file )
+    }
 
 }

@@ -24,22 +24,33 @@ import gsd.cdl.parser.EcosIml
 import gsd.cdl.AnalysisHelpers
 import gsd.cdl.model._
 import java.io.InputStream
+import io.Source
 
 class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
 
   lazy val features = model.allNodes
   lazy val rootNode = model.rootNode
 
-  lazy val switchFeatures = features.filter( f => f.flavor == BoolFlavor || f.flavor == BoolDataFlavor ).size
-  lazy val dataFeatures = features.filter( f => f.flavor == DataFlavor || f.flavor == BoolDataFlavor ).size
+  // Note that ther's usually overlap between switchFeatures and dataFeatures due to the booldata flavor,
+  // whose features are both switch and data
+  lazy val switchFeatures = features.filter( f => f.cdlType == PackageType || f.flavor == BoolFlavor || f.flavor == BoolDataFlavor )
+  lazy val dataFeatures = features.filter( f => ( f.flavor == DataFlavor || f.flavor == BoolDataFlavor ) && f.cdlType != PackageType )
 
   lazy val boolFlavorFeatures = features.filter( _.flavor == BoolFlavor ).size
   lazy val booldataFlavorFeatures = features.filter( _.flavor == BoolDataFlavor ).size
   lazy val noneFlavorFeatures = features.filter( _.flavor == NoneFlavor ).size
 
-  // FIXME
-  lazy val numericDataFeatures = 328
-  lazy val stringDataFeatures = 353
+  lazy val numericDataFeatures = types.filter( _._2 == "Number" ).map(_._1).map( i => model.nodesById.get(i).get )
+  lazy val stringDataFeatures = types.filter( _._2 == "String" ).map(_._1).map( i => model.nodesById.get(i).get )
+
+  // loads inferred types from CSV
+  lazy val types: List[Tuple2[String, String]] = {
+    val src = Source.fromInputStream( getClass.getResourceAsStream( "/types/" + model.modelName + "-types.csv" ) )
+    val iter = src.getLines map{ _.stripLineEnd split "," }
+    iter map{
+      case Array(id,typ) => (id.trim,typ.trim)
+    } toList
+  }
 
   lazy val noneFeatures = features.filter( _.flavor == NoneFlavor ).size
 
@@ -148,7 +159,7 @@ object TSE11Statistics{
   def apply( file: String ) =
     new TSE11Statistics( EcosIml.CupParser.parseFile( file ) )
 
-  def apply( stream: InputStream ) =
-      new TSE11Statistics( EcosIml.CupParser.parseStream( stream ) )
+  def apply( stream: InputStream, modelName: String ) =
+      new TSE11Statistics( EcosIml.CupParser.parseStream( stream, modelName ) )
 
 }
