@@ -54,6 +54,11 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
 
   lazy val noneFeatures = features.filter( _.flavor == NoneFlavor ).size
 
+  lazy val groupingFeatures = features.filter( f => f.cdlType == PackageType || f.cdlType == ComponentType )
+  
+  // individual feature purpose statistics
+  lazy val userFeatures = features.filter( f => f.cdlType != InterfaceType && f.calculated == None && f.flavor != NoneFlavor )
+  
   // all groups should contain more than one child
   lazy val orGroups = AnalysisHelpers.findGroups( model, "or" ).filter( _._2.size > 1)
   lazy val xorGroups = AnalysisHelpers.findGroups( model, "xor" ).filter( _._2.size > 1)
