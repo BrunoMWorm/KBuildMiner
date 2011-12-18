@@ -34,6 +34,19 @@
             <url>http://scala-tools.org/repo-releases</url>
         </repository>
     </repositories>
+	
+	<distributionManagement>
+	        <snapshotRepository>
+            <id>gsd-snapshots</id>
+            <name>GSD Snapshots Repository</name>
+            <url>http://bielsko.uwaterloo.ca:8081/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>gsd-thirdparty</id>
+            <name>GSD Thirdparty Repository</name>
+            <url>http://bielsko.uwaterloo.ca:8081/nexus/content/repositories/thirdparty</url>
+        </repository>
+	</distributionManagement>
     <build>
         <plugins>
             <plugin>
