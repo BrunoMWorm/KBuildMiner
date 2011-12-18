@@ -27,6 +27,7 @@ package gsd.iml.parser;
 import gsd.iml.ast.feature.Feature;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 
@@ -43,9 +44,13 @@ public class ImlParser {
         return parse(new FileReader(file)) ;
     }
 
-    @SuppressWarnings("unchecked")
     public static List<Feature> parse(Reader reader) throws Exception {
         ImlCupParser parser = new ImlCupParser(new ImlLexer(reader)) ;
+        return (List<Feature>) parser.parse().value ;
+    }
+
+    public static List<Feature> parse(InputStream in) throws Exception {
+        ImlCupParser parser = new ImlCupParser(new ImlLexer(in)) ;
         return (List<Feature>) parser.parse().value ;
     }
 }
