@@ -77,6 +77,13 @@ IFDEF
      modelFactory.pushIf( new Defined( new Identifier( $name.text ) ) );
      System.out.println("found ifdef "+$name.text );}
   ;
+IFNDEF
+  : 'ifndef' WS name=CONFIGVAR CR
+     {
+     modelFactory.pushIf( new Not( new Defined( new Identifier( $name.text ) ) ) );
+     System.out.println("found ifndef "+$name.text );}
+  ;
+
 UnsupportedRegocnizedIFEQ
   : 'ifeq' WS '(' WS? '$(' name=NA ')' WS? ',' WS? v=VA WS? ')' CR
      {

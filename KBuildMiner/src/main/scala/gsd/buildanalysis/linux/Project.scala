@@ -21,7 +21,7 @@ import java.io.{FileInputStream, InputStream, File}
 
 abstract class Project( val basedir: String ){
 
-  val makefileNames = "KBuild" :: "KBuild.src" :: "Makefile" :: Nil
+  val makefileNames = "Kbuild" :: "Kbuild.src" :: "Makefile" :: Nil
 
   def getTopMakefileFolders: List[String]
 
