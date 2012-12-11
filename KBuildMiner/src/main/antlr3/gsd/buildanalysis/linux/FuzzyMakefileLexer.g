@@ -223,7 +223,8 @@ LISTROW
       }
       
       for( String folder : elements_folders )
-        modelFactory.addMakefile( folder, exp );
+        if( !folder.startsWith("-I") )
+            modelFactory.addMakefile( folder, exp );
         
       // for variable problematice, see above
       for( String var : elements_variables ){
