@@ -31,7 +31,7 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   lazy val features = model.allNodes
   lazy val rootNode = model.rootNode
 
-  // Note that ther's usually overlap between switchFeatures and dataFeatures due to the booldata flavor,
+  // Note that there's usually overlap between switchFeatures and dataFeatures due to the booldata flavor,
   // whose features are both switch and data
   lazy val switchFeatures = features.filter( f => f.cdlType == PackageType || f.flavor == BoolFlavor || f.flavor == BoolDataFlavor )
   lazy val dataFeatures = features.filter( f => ( f.flavor == DataFlavor || f.flavor == BoolDataFlavor ) && f.cdlType != PackageType )
@@ -54,7 +54,10 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
 
   lazy val noneFeatures = features.filter( _.flavor == NoneFlavor ).size
 
+  // syntactic grouping features
   lazy val groupingFeatures = features.filter( f => f.cdlType == PackageType || f.cdlType == ComponentType )
+  // configurator (actual) grouping features
+  lazy val configuratorGroupingFeatures = features.filter( _.hasChildren )
   
   // individual feature purpose statistics
   lazy val userFeatures = features.filter( f => f.cdlType != InterfaceType && f.calculated == None && f.flavor != NoneFlavor )
@@ -78,23 +81,23 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   // branching statistics, only for inner nodes
   lazy val maxBranchingInner = ( 0 /: branchingMap.map(_._2.size).filter( _ > 0) )( scala.math.max )
   lazy val minBranchingInner = ( 1 /: branchingMap.map(_._2.size).filter( _ > 0) )( scala.math.min )
-  lazy val medianBranchingInner = median( branchingMap.map(_._2.size).filter( _ > 0).toSeq ).toString
+  lazy val medianBranchingInner = median( branchingMap.map(_._2.size).filter( _ > 0).toSeq ).toFloat//.toString
 
   // branching statistics, for all nodes
   lazy val maxBranchingAll = ( 0 /: branchingMap.map(_._2.size) )( scala.math.max )
   lazy val minBranchingAll = ( 0 /: branchingMap.map(_._2.size) )( scala.math.min )
-  lazy val medianBranchingAll = median( branchingMap.map(_._2.size).toSeq ).toString
+  lazy val medianBranchingAll = median( branchingMap.map(_._2.size).toSeq ).toFloat//.toString
 
     // sibling statistics, only for inner nodes
   lazy val siblingMapOfInnerNodes = siblingMap.filter( !_._1.children.isEmpty ).toMap
   lazy val maxSiblingsInner = ( 0 /: siblingMapOfInnerNodes.map( _._2.size ) ) ( scala.math.max )
   lazy val minSiblingsInner = ( 0 /: siblingMapOfInnerNodes.map( _._2.size ) )( scala.math.min )
-  lazy val medianSiblingsInner = median( siblingMapOfInnerNodes.map( _._2.size ).toSeq ).toString
+  lazy val medianSiblingsInner = median( siblingMapOfInnerNodes.map( _._2.size ).toSeq ).toFloat//.toString
 
   // sibling statistics, all nodes
   lazy val maxSiblingsAll = ( 0 /: siblingMap.map( _._2.size ) ) ( scala.math.max )
   lazy val minSiblingsAll = ( 0 /: siblingMap.map( _._2.size ) )( scala.math.min )
-  lazy val medianSiblingsAll = median( siblingMap.map( _._2.size ).toSeq ).toString
+  lazy val medianSiblingsAll = median( siblingMap.map( _._2.size ).toSeq ).toFloat//.toString
 
   lazy val innerNodes = features.filter( _.nchildren.size > 0 ).size
   lazy val leafNodes = features.filter( _.nchildren.isEmpty ).size
@@ -107,6 +110,10 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
     !( f.reqs.isEmpty && f.activeIfs.isEmpty && f.defaultValue == None && f.calculated == None && f.legalValues == None )
   }
   lazy val havingVisibilityCondition = features filterNot { _.activeIfs.isEmpty }
+
+  lazy val havingConfigurationConstraints = features filterNot { f => f.reqs.isEmpty && f.legalValues == None && f.calculated == None }
+
+  lazy val havingValueRestrictions = features filter { _.legalValues != None }
 
   lazy val featuresWithExplicitDefault = features filterNot { _.defaultValue == None }
   lazy val featuresWithExplicitDefaultUsingLiterals = featuresWithExplicitDefault filter { f => {
@@ -124,7 +131,19 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
     derivedFeaturesUsingLiterals contains _
   }
 
-  val featureConstraints = collectl{
+  lazy val featureConstraints = collectl{
+    case Node( id,cdlType,_,_,_,dv,ca,lv,re,ai,_,_) => {
+      var el = List[Constraint]()
+      if( ca != None ) el = Calculated( ca get ) :: el
+      if( dv != None ) el = DefaultValue( dv get ) :: el
+      if( lv != None ) el = LegalValues( lv get ) :: el
+      re.foreach( e => el = Requires( e ) :: el )
+      ai.foreach( e => el = ActiveIf( e ) :: el )
+      (id, el)
+    }
+  }( model.rootNode )
+
+  lazy val featureConstraintsInclParent = collectl{
     case Node( id,cdlType,_,_,_,dv,ca,lv,re,ai,_,_) => {
       var el = List[Constraint]()
       model.childParentMap.get( id ) match{
@@ -143,17 +162,33 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   /**
    * all referenced IDs, including the parent feature
    */
-  val referencedIDsPerFeature: Map[String,Set[String]] = featureConstraints map{ f =>
+  lazy val referencedIDsPerFeatureInclParent: Map[String,Set[String]] = featureConstraintsInclParent map{ f =>
     ( f._1, collects{
       case Identifier( id ) => id
     }(f._2) )
   } toMap
 
+  /**
+   * all referenced IDs, excluding the parent feature
+   */
+  lazy val referencedIDsPerFeature: Map[String,Set[String]] = featureConstraints map{ f =>
+    ( f._1, collects{
+      case Identifier( id ) => id
+    }(f._2) )
+  } toMap
+
+  // an approximation of Marcilio's CTCR metric
+  lazy val ctcr = ( referencedIDsPerFeature.filter( _._2.size > 0 ).map(_._1).toSet ++
+                    referencedIDsPerFeature.values.flatten.filter( model.nodesById.contains ) ).size
+  lazy val ctcrP = p( ctcr )
+
+
+
   // helpers
   def p( a: Int ) = scala.math.round( ( a.toFloat / features.size.toFloat ) * 100 )
 
   def median( s: Seq[Int] ) = {
-    val (lower, upper) = s.sortWith(_<_).splitAt(s.size / 2)
+    val (lower, upper) = s.sortWith( _ < _ ).splitAt(s.size / 2)
     if (s.size % 2 == 0) (lower.last + upper.head) / 2.0 else upper.head
   }
 

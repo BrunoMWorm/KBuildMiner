@@ -5011,7 +5011,7 @@ package CYGPKG_IO_WATCHDOG{
     }
 
     option CYGIMP_WATCHDOG_HARDWARE{
-      display "use "hardware" watchdog"
+      display "use \"hardware\" watchdog"
       default_value [1 ]
       implements [CYGINT_WATCHDOG_IMPLEMENTATIONS ]
     }
