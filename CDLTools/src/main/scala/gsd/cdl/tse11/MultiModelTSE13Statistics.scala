@@ -126,19 +126,29 @@ class MultiModelTSE13Statistics(val models: List[IML]){
 
   // constraints
   lazy val declaringConstraints = aggr( _.declaringConstraints.size )
+  lazy val declaringConstraintsP = aggr( x => x.p( x.declaringConstraints.size ) )
   lazy val havingVisibilityCondition = aggr( _.havingVisibilityCondition.size )
+  lazy val havingVisibilityConditionP = aggr( x => x.p( x.havingVisibilityCondition.size ) )
 
   lazy val havingConfigurationConstraints = aggr( _.havingConfigurationConstraints.size )
+  lazy val havingConfigurationConstraintsP = aggr( x => x.p( x.havingConfigurationConstraints.size ) )
 
   lazy val havingValueRestrictions = aggr( _.havingValueRestrictions.size )
+  lazy val havingValueRestrictionsP = aggr( x => x.p( x.havingValueRestrictions.size ) )
 
   lazy val featuresWithExplicitDefault = aggr( _.featuresWithExplicitDefault.size )
+  lazy val featuresWithExplicitDefaultP = aggr( x => x.p( x.featuresWithExplicitDefault.size ) )
   lazy val featuresWithExplicitDefaultUsingLiterals = aggr( _.featuresWithExplicitDefaultUsingLiterals.size )
+  lazy val featuresWithExplicitDefaultUsingLiteralsP = aggr( x => x.p( x.featuresWithExplicitDefaultUsingLiterals.size ) )
   lazy val featuresWithExplicitDefaultUsingExpressions = aggr( _.featuresWithExplicitDefaultUsingExpressions.size )
+  lazy val featuresWithExplicitDefaultUsingExpressionsP = aggr( x => x.p( x.featuresWithExplicitDefaultUsingExpressions.size ) )
 
   lazy val derivedFeatures = aggr( _.derivedFeatures.size )
+  lazy val derivedFeaturesP = aggr( x => x.p( x.derivedFeatures.size ) )
   lazy val derivedFeaturesUsingLiterals = aggr( _.derivedFeaturesUsingLiterals.size )
+  lazy val derivedFeaturesUsingLiteralsP = aggr( x => x.p( x.derivedFeaturesUsingLiterals.size ) )
   lazy val derivedFeaturesUsingExpressions = aggr( _.derivedFeaturesUsingExpressions.size )
+  lazy val derivedFeaturesUsingExpressionsP = aggr( x => x.p( x.derivedFeaturesUsingExpressions.size ) )
 
 //  lazy val featureConstraints =
 
