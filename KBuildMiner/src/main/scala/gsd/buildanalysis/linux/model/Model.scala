@@ -16,9 +16,10 @@
  */
 package gsd.buildanalysis.linux.model
 
-import kiama.attribution.Attribution._
-import kiama.attribution.Attributable
-import kiama.rewriting.Rewriter
+import org.kiama.attribution.Attribution._
+import org.kiama.attribution.Attributable
+import org.kiama.rewriting.Rewriter._
+import org.kiama.==>
 import gsd.common.Logging
 import gsd.buildanalysis.linux.{PersistenceManager, Expression}
 
@@ -86,8 +87,10 @@ case class ObjectDetails( objectFile: String,
                           extension: String,
                           generated: Boolean,
                           addedByList: String,
-                          sourceFile: Option[String],
+                          sourceFile: Option[SourceFile],
                           fullPathToObject: Option[String] ) extends BNodeDetails
+
+case class SourceFile( name: List[Any] )
 
 case class MakefileDetails( makefile: String ) extends BNodeDetails
 
@@ -106,7 +109,7 @@ case class VariableAssignmentDetails( varName: String, op: String, value: String
 /**
  * Attribute grammar implementation...
  */
-trait TreeHelper extends Rewriter with Logging{
+trait TreeHelper extends Logging{
 
   /**
    * Attribute that returns the "Makefile scope" of nodes, i.e. the next

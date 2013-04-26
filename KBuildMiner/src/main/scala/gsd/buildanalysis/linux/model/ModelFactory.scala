@@ -23,7 +23,7 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
 
   val makefilePath = currentMakefileNode match{
     case BNode( MakefileBNode, _, _, MakefileDetails( m ) ) => m
-    case _ => Predef.error("Not a Makefile node!")
+    case _ => sys.error("Not a Makefile node!")
   }
 
   var currentLoc = NodeLoc( currentMakefileNode )
@@ -42,7 +42,7 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
         // :+ automatically moves to new location
         currentLoc = currentLoc :+ BNode( IfBNode, List(), Some( !exp ), NoDetails )
       }
-      case _ => Predef.error( "Found ELSE without prior IF statement!" )
+      case _ => sys.error( "Found ELSE without prior IF statement!" )
     }
   }
 
@@ -52,7 +52,7 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
   private def pop{
     currentLoc = currentLoc.upOpt match{
       case Some( l ) => l
-      case None => Predef.error( "Cannot go up any further!" )
+      case None => sys.error( "Cannot go up any further!" )
     }
   }
 
@@ -116,7 +116,7 @@ class ModelFactory( currentMakefileNode: BNode, proj: Project ) extends Logging 
     assert( currentLoc.node.ntype == VariableDefinitionBNode )
     val listName = currentLoc.node.details match{
       case VariableDefinitionDetails( vN ) => vN
-      case _ => Predef.error( "Current node is not a list, i.e. a variable definition" )
+      case _ => sys.error( "Current node is not a list, i.e. a variable definition" )
     }
     currentLoc = currentLoc :\+ BNode( ObjectBNode, List(), Some( TRUE ),
       ObjectDetails( name, None, "o", false, listName, None, None ) )

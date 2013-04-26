@@ -22,6 +22,7 @@ import gsd.common.Logging
 import java.io.{PrintWriter, FileWriter, File, FileReader}
 import profiles.ProjectFactory
 import org.antlr.runtime.{ANTLRInputStream, CommonTokenStream, ANTLRFileStream}
+import org.kiama.rewriting.Rewriter._
 
 /**
  * Run the KBuild miner with this main class.
@@ -34,6 +35,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
   val AST_OUTPUT = "output/makefile_tree.xml"
   val PC_OUTPUT = "output/presence_conditions.txt"
+  val CCFLAGS_OUTPUT = "output/ccflags.xml"
 
   /**
    * Part of the API, to be used by other projects. Tries to identify the
@@ -51,11 +53,13 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   def main( codebase: Option[String],
             astOutput: Option[String],
             pcOutput: Option[String],
+            ccflagsOutput: Option[String],
             saveAST: Option[String] ){
 
     val _codebase   = getArg( codebase, "codebase", Linux_KERNEL )
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
+    val _ccflagsOutput   = getArg( pcOutput, "ccflagsOutput", CCFLAGS_OUTPUT )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
     val p = ProjectFactory newProject _codebase
@@ -83,7 +87,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     PersistenceManager.saveCFlags(
       rewrite( removeCONFIG_Prefix)( CFlagRecognition.findExtraCFlags( ast ) ),
       rewrite( removeCONFIG_Prefix)( CFlagRecognition.findFileSpecificFlags( ast ) ),
-      "output/cflags-2.6.33.3.xml" )
+      _ccflagsOutput )
   }
 
   private def getArg[T]( arg: Option[T], name:String, default: String ): String =
@@ -109,7 +113,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     BNode( RootNode, proj.getTopMakefileFolders.flatMap{
       f => proj.findMakefile(f) match{
         case mfs: List[String] if !mfs.isEmpty => mfs.map( processMakefile( _, Some( True() ), proj ) )
-        case _ => Predef.error("No KBuild Makefile found in: " + f )
+        case _ => sys.error("No KBuild Makefile found in: " + f )
       }
     }, None, NoDetails )
 
@@ -139,9 +143,11 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     // set source file
     val setSourceFileRule = everywheretd{
       rule{
-        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, None, fP ) ) =>
+        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, None, fP ) ) => {
+          val sourceFile = proj.getSource( b, oF, gen )
           BNode( ObjectBNode, ch, exp,
-            ObjectDetails( oF, bA, ext, gen, lN, proj.getSource( b, oF, gen ), fP ) )
+            ObjectDetails( oF, bA, ext, gen, lN, sourceFile, fP ) )
+        }
       }
     }
     // descend into and process the sub makefiles

@@ -16,9 +16,9 @@
  */
 package gsd.buildanalysis.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 
-trait ExpressionUtils extends Rewriter{
+trait ExpressionUtils{
 
   val FALSE: Expression = False()
   val TRUE: Expression = True()

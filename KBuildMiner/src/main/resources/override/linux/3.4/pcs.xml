@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<override_pcs>
+	<pc>
+		<f>fs/proc/nommu.c</f>
+		<e>(!(MMU == "y") &amp;&amp; ((PROC_FS == "y") || (PROC_FS == "m")))</e>
+	</pc>
+</override_pcs>

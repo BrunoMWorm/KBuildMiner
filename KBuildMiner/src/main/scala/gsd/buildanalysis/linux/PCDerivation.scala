@@ -17,14 +17,15 @@
 package gsd.buildanalysis.linux
 
 import model._
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import gsd.common.Logging
 
-object PCDerivation extends Rewriter with TreeHelper with Logging with ExpressionUtils{
+object PCDerivation extends TreeHelper with Logging with ExpressionUtils{
 
   case class Path( children: List[Path], node: BNode, name: String )
 
   def calculateFilePCs( tree: BNode, manualPCs: Map[String,Expression] ): Map[String,Expression] = {
+
 
     val objectFiles = collectl{
       case b@BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => b
@@ -87,7 +88,7 @@ object PCDerivation extends Rewriter with TreeHelper with Logging with Expressio
 
       def apply( t: Term ): Option[Term] ={
 
-        if( cache.exists( _ eq t ) ) // check for object identity
+        if( cache.exists( _ == t ) ) // previous check was for object identity, not supported in scala 2.9.1 anymore
           None
 
         t match{

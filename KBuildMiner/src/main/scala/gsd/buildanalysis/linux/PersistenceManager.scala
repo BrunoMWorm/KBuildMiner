@@ -16,14 +16,14 @@
  */
 package gsd.buildanalysis.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import gsd.common.Logging
 import model._
 import xml.{UnprefixedAttribute, Elem, Node, XML}
 import java.io.InputStream
 import gsd.buildanalysis.linux.CFlagRecognition.{CFLAGS_REMOVE_file, CFLAGS_file, FileSpecificCFlags, EXTRA_CFLAGS}
 
-object PersistenceManager extends Rewriter with Logging{
+object PersistenceManager extends Logging{
 
   implicit def pimp( elem: Elem ) = new {
     import scala.xml.Null

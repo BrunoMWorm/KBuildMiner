@@ -25,15 +25,14 @@ abstract class Project( val basedir: String ){
 
   def getTopMakefileFolders: List[String]
 
-  protected def getLocalOverrideFolder: Option[String]
+  protected def getLocalOverrideFolder: String
 
   def getStreamHandle( relativePathToMakefile: String ): InputStream = {
-    if( getLocalOverrideFolder != None ){
-      val checkOverride = getClass.getResourceAsStream( getLocalOverrideFolder.get + "/" + relativePathToMakefile )
-      if( checkOverride != null )
-        return checkOverride
-    }
-    new FileInputStream( basedir + "/" + relativePathToMakefile )
+    val checkOverride = getClass.getResourceAsStream( getLocalOverrideFolder + "/" + relativePathToMakefile )
+    if( checkOverride != null )
+      checkOverride
+    else
+      new FileInputStream( basedir + "/" + relativePathToMakefile )
   }
 
   def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String]

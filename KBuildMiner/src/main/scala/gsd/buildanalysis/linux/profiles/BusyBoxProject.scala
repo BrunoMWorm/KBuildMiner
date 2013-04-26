@@ -29,7 +29,7 @@ class BusyBoxProject( basedir: String ) extends Project( basedir ) with TreeHelp
                              "networking/udhcp" :: "printutils" :: "procps" :: "runit" :: "selinux" ::
                              "shell" :: "sysklogd" :: "util-linux" :: "util-linux/volume_id" :: Nil
 
-  val OVERRIDE_Folder = Some( "override/busybox" )
+  val OVERRIDE_Folder = "override/busybox"
 
   def getTopMakefileFolders: List[String] = TOP_MAKEFILE_FOLDERS
 

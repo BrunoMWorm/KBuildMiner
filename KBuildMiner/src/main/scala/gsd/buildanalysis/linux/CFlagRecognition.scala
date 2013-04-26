@@ -16,10 +16,10 @@
  */
 package gsd.buildanalysis.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import model._
 
-object CFlagRecognition extends Rewriter with TreeHelper{
+object CFlagRecognition extends TreeHelper{
 
   case class EXTRA_CFLAGS( value: String, assignmentOp: String, pc: Option[Expression], belongsTo: String )
 

@@ -29,19 +29,17 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
 
   def getTopMakefileFolders: List[String] = TOP_MAKEFILE_FOLDERS
 
-  def getLocalOverrideFolder =
-    if( getVersion == "2.6.28.6" )
-      Some( "/override/linux-2.6.28.6" )
-    else
-      None
+  def getLocalOverrideFolder = "/override/linux/" + getVersion + "/codebase"
 
   private def getVersion = basedir.substring( basedir lastIndexOf '-' + 1 )
 
-  def getManualPCs: Map[String,Expression] =
-    if( getVersion == "2.6.28.6" )
-      PersistenceManager loadManualPCs getClass.getResourceAsStream( "/override/linux-2.6.28.6_pcs.xml" )
+  def getManualPCs: Map[String,Expression] = {
+    val is = getClass.getResourceAsStream( "/override/linux/" + getVersion + "/pcs.xml" )
+    if( is!= null)
+      PersistenceManager loadManualPCs is
     else
       Map[String,Expression]()
+  }
   
   def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String] = {
 
@@ -56,7 +54,7 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
 
     findMakefile( currentFolder + "/" + rp ) match{
       case m: List[String] if !m.isEmpty =>  m
-      case _ => Predef.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+      case _ => sys.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
     }
 
   }
@@ -74,7 +72,7 @@ class LinuxProject( basedir: String ) extends Project( basedir ) with TreeHelper
 
     val mf = b->mfScope match{
       case BNode(_,_,_,MakefileDetails(m)) => m
-      case _ => Predef.error( "No Makefile node!" )
+      case _ => sys.error( "No Makefile node!" )
     }
 
     val currentFolder = if( oF startsWith "/" )

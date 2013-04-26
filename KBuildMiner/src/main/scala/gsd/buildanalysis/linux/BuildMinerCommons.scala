@@ -16,11 +16,11 @@
  */
 package gsd.buildanalysis.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import java.io.{FileFilter, File}
 import gsd.common.Logging
 
-trait BuildMinerCommons extends Rewriter with Logging{
+trait BuildMinerCommons extends Logging{
 
   val toBoolean = everywherebu{
     rule{
