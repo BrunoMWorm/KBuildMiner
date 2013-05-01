@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 #
 # Unix Shell Script for CDL to BOOLEAN conversion v0.1, April 6 2011
 #

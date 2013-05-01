@@ -24,8 +24,40 @@ object PCDerivation extends TreeHelper with Logging with ExpressionUtils{
 
   case class Path( children: List[Path], node: BNode, name: String )
 
-  def calculateFilePCs( tree: BNode, manualPCs: Map[String,Expression] ): Map[String,Expression] = {
+  def calculateFilePCs( tree: BNode, manualPCs: Map[String,Expression], proj: Project ): Map[String,Expression] = {
 
+
+
+//    val setSourceFileRule = everywheretd{
+//      rule{
+//        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, None, fP ) ) => {
+//          val vars = varOcc.findAllIn( oF ).map{ case varOcc( v ) => v }
+//          val sourceFile = proj.getSource( b, oF, gen )
+////          sourceFile match{
+////            case Some( f ) => f.rep
+////          }
+//          BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, sourceFile, fP ) )
+//        }
+//      }
+//    }
+
+    val usingVars = collectl{
+      case b@BNode(_,_,_,ObjectDetails(oF,_,_,_,_,_,_)) if (b->uses).size>0 => {
+//        trace("start getting incoming vars")
+//        val i = ""
+        val i = (b->in)
+//        trace("end getting incoming vars")
+        debug( "Using variables (" + oF + "): " + (b->uses) + " and getting in: " + i )
+        b
+      }
+    }(tree)
+
+    val definingVars = collectl{
+      case b@BNode(_,_,_,_) if (b->defines).size>0 => {
+        debug( "Defining variables: " + (b->defines) /*+ " and getting in: " + (b->in)*/ )
+        b
+      }
+    }(tree)
 
     val objectFiles = collectl{
       case b@BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => b
@@ -95,7 +127,7 @@ object PCDerivation extends TreeHelper with Logging with ExpressionUtils{
           case b:BNode =>
             trace( "moveUpStrategy: visiting " + node2String(b) )
           case x =>
-            Predef.error("Unexpected: " + x )
+            sys.error("Unexpected: " + x )
         }
 
         t match{
@@ -116,7 +148,7 @@ object PCDerivation extends TreeHelper with Logging with ExpressionUtils{
                     (p /: ifs)( (aP,x) => Path( aP :: Nil, x, x.ntype.toString ) )
                   }
                 }
-                case _ => Predef error "Path expected"
+                case _ => sys error "Path expected"
               } ), b, b.ntype.toString ) )
             }
           }

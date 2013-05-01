@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import gsd.buildanalysis.linux.model._
 import gsd.buildanalysis.linux.{Expression, PCDerivation, Defined, Identifier}
+import gsd.buildanalysis.linux.profiles.ProjectFactory
 
 @RunWith(classOf[JUnitRunner])
 class PCDerivationTest extends FunSuite with TreeHelper{
@@ -53,7 +54,7 @@ class PCDerivationTest extends FunSuite with TreeHelper{
   implicit def string2Identifier( s: String ) = Identifier( s )
 
   test("Check derived PCs"){
-    val pcs = PCDerivation.calculateFilePCs( ast1, Map[String,Expression]() )
+    val pcs = PCDerivation.calculateFilePCs( ast1, Map[String,Expression](), ProjectFactory.newProject("") )
     val pc = pcs get "obj3.c"
     assert( pc === Some( Defined( "obj3" ) & ( Defined( "MF2") & Defined( "MF1" ) ) ) )
   }

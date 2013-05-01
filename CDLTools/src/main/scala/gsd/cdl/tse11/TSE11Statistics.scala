@@ -61,6 +61,7 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   
   // individual feature purpose statistics
   lazy val userFeatures = features.filter( f => f.cdlType != InterfaceType && f.calculated == None && f.flavor != NoneFlavor )
+  lazy val interfaceFeatures = features.filter( _.cdlType == InterfaceType )
   
   // all groups should contain more than one child
   lazy val orGroups = AnalysisHelpers.findGroups( model, "or" ).filter( _._2.size > 1)
@@ -176,6 +177,8 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
       case Identifier( id ) => id
     }(f._2) )
   } toMap
+
+  lazy val featuresWithCrossTreeDependency = referencedIDsPerFeature.filter( _._2.size >= 1 ).map( _._1 )
 
   // an approximation of Marcilio's CTCR metric
   lazy val ctcr = ( referencedIDsPerFeature.filter( _._2.size > 0 ).map(_._1).toSet ++

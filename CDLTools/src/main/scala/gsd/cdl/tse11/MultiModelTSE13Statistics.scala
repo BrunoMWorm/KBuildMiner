@@ -40,7 +40,7 @@ class MultiModelTSE13Statistics(val models: List[IML]){
   // mean
   def aggr( s: TSE11Statistics => Int ): Int = {
     val sum = (0 /: allStats.map( s ))( _ + _ )
-    sum / allStats.size
+    scala.math.round( sum.toFloat / allStats.size.toFloat )
   }
 
   def faggr( s: TSE11Statistics => Float ): Float = {
@@ -78,6 +78,7 @@ class MultiModelTSE13Statistics(val models: List[IML]){
 
   // individual feature purpose statistics
   lazy val userFeatures = aggr( _.userFeatures.size )
+  lazy val userFeaturesP = aggr( x => x.p( x.userFeatures.size ) )
 
   // all groups should contain more than one child
   lazy val orGroups = aggr( _.orGroups.size )

@@ -23,6 +23,7 @@ import java.io.{PrintWriter, FileWriter, File, FileReader}
 import profiles.ProjectFactory
 import org.antlr.runtime.{ANTLRInputStream, CommonTokenStream, ANTLRFileStream}
 import org.kiama.rewriting.Rewriter._
+import org.kiama.attribution.Attribution
 
 /**
  * Run the KBuild miner with this main class.
@@ -45,7 +46,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
     val p = ProjectFactory newProject codebase
     val ast = buildAST( p )
-    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs )
+    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs, p )
     val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
     Map( boolPCs: _* )
   }
@@ -73,7 +74,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       PersistenceManager.outputXML( ast, _astOutput )
 
     info( "Deriving file presence conditions..." )
-    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs )
+    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs, p )
 
     val out = new PrintWriter( new FileWriter( _pcOutput ) )
     info( "Saving PCs to: " + _pcOutput )
@@ -109,14 +110,29 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
 
 
-  private def buildAST( proj: Project ) =
-    BNode( RootNode, proj.getTopMakefileFolders.flatMap{
+  private def buildAST( proj: Project ) = {
+    // set source file
+    val setSourceFileRule = everywheretd{
+      rule{
+        case b@BNode( ObjectBNode, ch, exp, ObjectDetails( oF, bA, ext, gen, lN, None, fP ) ) => {
+          val sourceFile = proj.getSource( b, oF, gen )
+          BNode( ObjectBNode, ch, exp,
+            ObjectDetails( oF, bA, ext, gen, lN, sourceFile, fP ) )
+        }
+      }
+    }
+
+    val ast = BNode( RootNode, proj.getTopMakefileFolders.flatMap{
       f => proj.findMakefile(f) match{
         case mfs: List[String] if !mfs.isEmpty => mfs.map( processMakefile( _, Some( True() ), proj ) )
         case _ => sys.error("No KBuild Makefile found in: " + f )
       }
     }, None, NoDetails )
-
+    Attribution.initTree( ast )
+    val ret = rewrite( setSourceFileRule )( ast )
+    Attribution.initTree( ret )
+    ret
+  }
 
   private def processMakefile( mf: String, exp: Option[Expression], proj: Project ): BNode = {
 
@@ -168,7 +184,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
 
     rewrite( postProcessingRule <*
              sequencerRule <*
-             setSourceFileRule <*
+//             setSourceFileRule <*
              processMakefilesRule )( result )
 
   }

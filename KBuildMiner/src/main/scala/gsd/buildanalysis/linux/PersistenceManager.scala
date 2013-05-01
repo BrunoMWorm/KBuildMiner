@@ -23,7 +23,7 @@ import xml.{UnprefixedAttribute, Elem, Node, XML}
 import java.io.InputStream
 import gsd.buildanalysis.linux.CFlagRecognition.{CFLAGS_REMOVE_file, CFLAGS_file, FileSpecificCFlags, EXTRA_CFLAGS}
 
-object PersistenceManager extends Logging{
+object PersistenceManager extends Logging with TreeHelper{
 
   implicit def pimp( elem: Elem ) = new {
     import scala.xml.Null
@@ -48,8 +48,8 @@ object PersistenceManager extends Logging{
     case BNode( VariableDefinitionBNode, ch, _, _ ) => <ListVariableDefinition>{ getXml(ch) }</ListVariableDefinition>
     case BNode( VariableReferenceBNode, ch, _, _ ) => <VariableReference>{ getXml(ch) }</VariableReference>
     case BNode( VariableAssignmentBNode, ch, _, _ ) => <VariableAssignment>{ getXml(ch) }</VariableAssignment>
-    case n => Predef.error( "Unknown node: " + n )
-  } ) % getDetails( bn )
+    case n => sys.error( "Unknown node: " + n )
+  } ) % getDetails( bn ) % Map( "succ" -> ("" /: (bn->succ))( _ + "," + _.toString ) )
 
   private def getXml( ch: List[BNode] ): Seq[Node] = ch map getXml
 

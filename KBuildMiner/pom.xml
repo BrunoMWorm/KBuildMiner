@@ -23,7 +23,7 @@
 	<artifactId>KBuildMiner</artifactId>
 	<version>0.2</version>
 	<properties>
-		<scala.version>2.9.1</scala.version>
+		<scala.version>2.9.2</scala.version>
 	</properties>
 
     <repositories>
@@ -135,9 +135,9 @@
           <scope>test</scope>
         </dependency-->
       <dependency>
-          <groupId>com.googlecode</groupId>
-          <artifactId>kiama_2.9.0-1</artifactId>
-          <version>1.1.0</version>
+          <groupId>com.googlecode.kiama</groupId>
+          <artifactId>kiama_2.9.2</artifactId>
+          <version>1.4.0</version>
          <type>jar</type>
       </dependency>
         <dependency>
@@ -169,5 +169,11 @@
             <artifactId>paranamer</artifactId>
             <version>1.3</version>
         </dependency>
+      <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>4.7</version>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 </project>

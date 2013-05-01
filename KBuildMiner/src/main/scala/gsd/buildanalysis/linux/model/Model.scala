@@ -37,6 +37,9 @@ case class BNode( ntype: BNodeType,
     case BNode( _, _, _, ObjectDetails(oF,_,_,_,_,_,_) ) => "[Object: " + oF + "]"
     case BNode( _, _, _, VariableDefinitionDetails(v) ) => "[VariableDefinition: " + v + "]"
     case BNode( _, _, _, VariableReferenceDetails(v) ) => "[VariableReference: " + v + "]"
+    case BNode( _, _, _, VariableAssignmentDetails( n, v, o) ) => "[VariableAssignment: " + n + "]"
+    case BNode( _, _, _, TempCompositeListDetails( n, p ) ) => "[TempCompositeList: " + n + "]"
+    case BNode( IfBNode, _, e, _ ) => "[IF: " + e + "]"
     case _ => super.toString
   }
 
@@ -87,10 +90,10 @@ case class ObjectDetails( objectFile: String,
                           extension: String,
                           generated: Boolean,
                           addedByList: String,
-                          sourceFile: Option[SourceFile],
+                          sourceFile: Option[String],
                           fullPathToObject: Option[String] ) extends BNodeDetails
 
-case class SourceFile( name: List[Any] )
+//case class SourceFile( name: List[Any] )
 
 case class MakefileDetails( makefile: String ) extends BNodeDetails
 
@@ -115,13 +118,13 @@ trait TreeHelper extends Logging{
    * Attribute that returns the "Makefile scope" of nodes, i.e. the next
    * Makefile node in the hierarchy (without current node).
    */
-  val mfScope: BNode ==> BNode =
+  val mfScope: BNode => BNode =
     attr{
       case BNode( RootNode, _, _, _ ) =>
-        Predef.error( "No containing Makefile found!" )
+        sys.error( "No containing Makefile found!" )
       case b => b.parent[BNode] match{
         case p@BNode( MakefileBNode, _, _, _ ) => p
-        case _ => b.parent[BNode]->mfScope
+        case _ => { if(b.parent==null) println("parent NULL for: " + b); b.parent[BNode]->mfScope }
       }
     }
 
@@ -129,7 +132,7 @@ trait TreeHelper extends Logging{
    * Attribute that calculates possible predecessors in terms of control and
    * data flow.
    */
-  val moveUp: BNode ==> List[BNode] =
+  val moveUp: BNode => List[BNode] =
     attr{
       case BNode( RootNode, _, _, _ ) => List()
       case b@BNode( TempCompositeListBNode, _, _, TempCompositeListDetails( ln, _ ) ) =>{
@@ -148,6 +151,16 @@ trait TreeHelper extends Logging{
         b.parent[BNode] :: Nil
       }
     }
+
+
+
+//  val varAssignments: BNode => List[BNode] =
+//    attr{
+//      case b:BNode => b.prev[BNode] match{
+//        case null => b.parent[BNode]->varAssignments
+//        case b2:BNode( t, _, _, _ ) if t!=MakefileBNode => b2->varAssignments
+//      }
+//    }
 
   private def node2String( b: BNode ) =
     b.ntype.toString + " --> " + PersistenceManager.getDetails( b ).toString
@@ -179,12 +192,12 @@ trait TreeHelper extends Logging{
 
   def getSourceFile( b: BNode ) = b match{
     case BNode( _, _, _, ObjectDetails( _, _, _, _, _, Some( sF ), _ ) ) => sF
-    case _ => Predef.error( "Not an ObjectBNode with an associated source file!" )
+    case _ => sys.error( "Not an ObjectBNode with an associated source file!" )
   }
 
   def getMakeFile( b: Term ) = b match{
     case BNode( _, _, _, MakefileDetails( mF ) ) => mF
-    case _ => Predef.error( "Not a MakefileBNode!" )
+    case _ => sys.error( "Not a MakefileBNode!" )
   }
 
   /**
@@ -231,5 +244,92 @@ trait TreeHelper extends Logging{
           }
       }
 
+  // control-flow attributes
+  val succ: BNode => Set[BNode] =
+    attr {
+        case BNode( RootNode, c, _, _ )         => if( c.isEmpty ) Set() else Set( c.head )
+        case b@BNode( IfBNode, c, _, _ )        => if( c.isEmpty ) b->following else Set( c.head )
+//        case b@BNode( IfBNode, c, _, _ )        => (b->following) ++ ( if( !c.isEmpty ) Set( c.head ) else Set.empty )
+        case b@BNode( MakefileBNode, c, _, _ )  => if( c.isEmpty ) b->following else Set( c.head )
+//        case b@BNode( MakefileBNode, c, _, _ )  => (b->following) ++ ( if( !c.isEmpty ) Set( c.head ) else Set.empty )
+        case b@BNode( TempCompositeListBNode, c, _, _ )  => if( c.isEmpty ) b->following else Set( c.head )
+        case b@BNode( VariableDefinitionBNode, c, _, _ )  => if( c.isEmpty ) b->following else Set( c.head )
+        case b                                  => b->following
+    }
+
+  val following: BNode => Set[BNode] =
+    attr {
+      ( s: BNode) => s.parent match{
+         case b@BNode( _, _, _, _ ) if s isLast  => b->following
+         case b@BNode( _, _, _, _ )   => Set( s.next[BNode] )
+//               case b @ lock (_*) if s isLast => b->following
+//               case lock (_*)                 => Set (s.next)
+         case _                          => Set ()
+      }
+    }
+
+  case class VarAssign( name: String /*, value: String, origin: BNode */)
+//  case class VarUse( name: String )
+
+  val defines: BNode => Set[VarAssign] =
+    attr {
+      case b@BNode( _, _, _, VariableAssignmentDetails( varName, op, value ) ) => Set ( VarAssign( varName/*, value, b*/ ) )
+      case _ => Set ()
+    }
+
+  val varOcc = """\$\((.+)\)""".r
+
+  val uses: BNode => Set[VarAssign] =
+    attr {
+        case BNode( ObjectBNode, _, _, ObjectDetails(oF,_,_,_,_,_,_) )  =>
+            varOcc.findAllIn( oF ).map{ case varOcc( v ) => VarAssign( v ) }.toSet
+          case _             => Set ()
+      }
+
+
+//  val previousDefinitions: BNode => Set[VarAssign] =
+//    attr{
+//
+//    }
+
+  val in: BNode => Set[VarAssign] =
+      circular (Set[VarAssign]()) (
+          s => {
+              uses (s) ++ (out (s) -- defines (s))
+          }
+      )
+
+  val out : BNode => Set[VarAssign] =
+      circular (Set[VarAssign]()) (
+          s => {
+              (s->succ) flatMap (in)
+          }
+      )
+
+//  val definedBefore: BNode => Set[String] =
+//    attr{
+//
+//    }
+
+
+//  val in : BNode => Set[String] =
+//      circular ( Set[String]() ) (
+//        (s:BNode) => { (s->uses) ++ ( (s->out) -- (s->defines) ) }
+//      )
+//
+//  val out : BNode => Set[String] =
+//      circular ( Set[String]() ) (
+//        (s:BNode) => { (s->succ) flatMap (in) }
+//      )
+
+//  val in : BNode => Set[String] =
+//      circular (Set[String]()) {
+//          case s => uses (s) ++ (out (s) -- defines (s))
+//      }
+//
+//  val out : BNode => Set[String] =
+//      circular (Set[String]()) {
+//          case s => (s->succ) flatMap (in)
+//      }
 
 }
