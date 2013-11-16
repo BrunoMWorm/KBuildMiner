@@ -162,6 +162,9 @@ class MultiModelTSE13Statistics(val models: List[IML]){
     (f,all, referencedIDsPerFeature.get(f).get )
   }
 
+  lazy val featuresWithCrossTreeDependency = aggr( _.featuresWithCrossTreeDependency.size )
+  lazy val featuresWithCrossTreeDependencyP = aggr( x => x.p(x.featuresWithCrossTreeDependency.size ) )
+
   // an approximation of Marcilio's CTCR metric
   lazy val ctcr = aggr( _.ctcr )
   lazy val ctcrP = aggr( _.ctcrP )

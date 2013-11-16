@@ -83,6 +83,7 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   lazy val maxBranchingInner = ( 0 /: branchingMap.map(_._2.size).filter( _ > 0) )( scala.math.max )
   lazy val minBranchingInner = ( 1 /: branchingMap.map(_._2.size).filter( _ > 0) )( scala.math.min )
   lazy val medianBranchingInner = median( branchingMap.map(_._2.size).filter( _ > 0).toSeq ).toFloat//.toString
+  lazy val meanBranchingInner = ( (0 /: branchingMap.map(_._2).filter( _.size > 0) )( (acc,b) => acc + b.size ) ).toFloat / branchingMap.map(_._2.size).filter( _ > 0).size.toFloat
 
   // branching statistics, for all nodes
   lazy val maxBranchingAll = ( 0 /: branchingMap.map(_._2.size) )( scala.math.max )
@@ -126,7 +127,7 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
 
   lazy val derivedFeatures = features filterNot { _.calculated == None }
   lazy val derivedFeaturesUsingLiterals = derivedFeatures filter {
-    _.defaultValue.get.isInstanceOf[Literal]
+    _.calculated.get.isInstanceOf[Literal]
   }
   lazy val derivedFeaturesUsingExpressions  = derivedFeatures filterNot {
     derivedFeaturesUsingLiterals contains _
@@ -179,6 +180,7 @@ class TSE11Statistics( val model: IML ) extends ImlTreeAttributes{
   } toMap
 
   lazy val featuresWithCrossTreeDependency = referencedIDsPerFeature.filter( _._2.size >= 1 ).map( _._1 )
+  lazy val featuresWithCrossTreeDependencyP = p( featuresWithCrossTreeDependency.size )
 
   // an approximation of Marcilio's CTCR metric
   lazy val ctcr = ( referencedIDsPerFeature.filter( _._2.size > 0 ).map(_._1).toSet ++
