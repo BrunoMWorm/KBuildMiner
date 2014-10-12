@@ -66,7 +66,7 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
     val _codebase   = codebase
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
-    val _ccflagsOutput   = getArg( pcOutput, "ccflagsOutput", CCFLAGS_OUTPUT )
+    val _ccflagsOutput   = getArg( ccflagsOutput, "ccflagsOutput", CCFLAGS_OUTPUT )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
         val _topFolders = topFolders.split(",").toList

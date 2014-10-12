@@ -23,7 +23,7 @@ class Project( val basedir: String, val topFolders: List[String] ) extends TreeH
 
   val makefileNames = "Kbuild" :: "Kbuild.src" :: "Makefile" :: Nil
 
-  def getTopMakefileFolders: List[String] = topFolders
+  def getTopMakefileFolders: List[String] = topFolders 
 
 
   def getStreamHandle( relativePathToMakefile: String ): InputStream = {
@@ -32,7 +32,7 @@ class Project( val basedir: String, val topFolders: List[String] ) extends TreeH
 
 
     def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String] = {
-        val currentFolder = currentMakefile.substring( 0, currentMakefile.lastIndexOf('/') )
+        val currentFolder = currentMakefile.substring( 0, Math.max(0,currentMakefile.lastIndexOf('/')) )
         val newPath = basedir + "/" + currentFolder + "/" + relativePath
 
         findMakefile( currentFolder + "/" + relativePath ) match{
@@ -43,7 +43,7 @@ class Project( val basedir: String, val topFolders: List[String] ) extends TreeH
     }
 
      def findMakefile( folder: String ): List[String] ={
-           val _folder = new File( folder )
+           val _folder = new File( basedir + "/" + folder )
            if (!_folder.exists()) return Nil
            if (_folder.isFile) return folder :: Nil
            assert(_folder.isDirectory, folder+" is not a file or directory")
@@ -71,7 +71,7 @@ class Project( val basedir: String, val topFolders: List[String] ) extends TreeH
         val currentFolder = if( oF startsWith "/" )
             "" // absolute object path
         else
-            mf.substring( 0, mf lastIndexOf '/' )
+            mf.substring( 0, Math.max(0, mf lastIndexOf '/' ) )
 
         // check that source file paths don't start with one or more "/"
         def sanitize( f: String ): String =
