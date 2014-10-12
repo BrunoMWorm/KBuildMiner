@@ -42,14 +42,19 @@ class Project( val basedir: String, val topFolders: List[String] ) extends TreeH
 
     }
 
-  def findMakefile( folder: String ): List[String] ={
-    for( mf <- makefileNames ){
-      val m = new File( basedir + "/" + folder + "/" + mf )
-      if( m exists )
-        return folder + ( if( folder endsWith "/" ) "" else "/" ) + mf :: Nil
-    }
-    Nil
-  }
+     def findMakefile( folder: String ): List[String] ={
+           val _folder = new File( folder )
+           if (!_folder.exists()) return Nil
+           if (_folder.isFile) return folder :: Nil
+           assert(_folder.isDirectory, folder+" is not a file or directory")
+
+           for( mf <- makefileNames ){
+              val m = new File( basedir + "/" + folder + "/" + mf )
+              if( m exists )
+                  return folder + ( if( folder endsWith "/" ) "" else "/" ) + mf :: Nil
+           }
+           Nil
+     }
 
 
 

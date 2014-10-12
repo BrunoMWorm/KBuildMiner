@@ -1,6 +1,8 @@
 KBuildMiner
 ====
 
+run `mvn compile` to get dependencies and compile the project
+
 setup run.sh by executing `mvn dependency:build-classpath -Dmdep.outputFile=.classpath-scala`
 
 then run with `./run.sh gsd.buildanalysis.linux.KBuildMinerMain <parameters>`
