@@ -16,26 +16,31 @@
  */
 package gsd.buildanalysis.linux
 
-import model.BNode
+import gsd.buildanalysis.linux.model.{TreeHelper, MakefileDetails, BNode}
 import java.io.{FileInputStream, InputStream, File}
 
-abstract class Project( val basedir: String ){
+class Project( val basedir: String, val topFolders: List[String] ) extends TreeHelper {
 
   val makefileNames = "Kbuild" :: "Kbuild.src" :: "Makefile" :: Nil
 
-  def getTopMakefileFolders: List[String]
+  def getTopMakefileFolders: List[String] = topFolders
 
-  protected def getLocalOverrideFolder: String
 
   def getStreamHandle( relativePathToMakefile: String ): InputStream = {
-    val checkOverride = getClass.getResourceAsStream( getLocalOverrideFolder + "/" + relativePathToMakefile )
-    if( checkOverride != null )
-      checkOverride
-    else
       new FileInputStream( basedir + "/" + relativePathToMakefile )
   }
 
-  def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String]
+
+    def lookupSubMakefile( currentMakefile: String, relativePath: String): List[String] = {
+        val currentFolder = currentMakefile.substring( 0, currentMakefile.lastIndexOf('/') )
+        val newPath = basedir + "/" + currentFolder + "/" + relativePath
+
+        findMakefile( currentFolder + "/" + relativePath ) match{
+            case m: List[String] if !m.isEmpty =>  m
+            case _ => sys.error( "Neither a KBuild nor a Makefile exists in folder " + newPath )
+        }
+
+    }
 
   def findMakefile( folder: String ): List[String] ={
     for( mf <- makefileNames ){
@@ -46,11 +51,41 @@ abstract class Project( val basedir: String ){
     Nil
   }
 
-  /**
-   * Lookup source file of object node
-   */
-  def getSource( b: BNode, oF: String, gen: Boolean ): Option[String]
 
-  def getManualPCs: Map[String,Expression]
+
+    /**
+     * Lookup source file of object node
+     */
+    def getSource( b: BNode, oF: String, gen: Boolean ): Option[String] ={
+
+        val mf = b->mfScope match{
+            case BNode(_,_,_,MakefileDetails(m)) => m
+            case _ => sys.error( "No Makefile node!" )
+        }
+
+        val currentFolder = if( oF startsWith "/" )
+            "" // absolute object path
+        else
+            mf.substring( 0, mf lastIndexOf '/' )
+
+        // check that source file paths don't start with one or more "/"
+        def sanitize( f: String ): String =
+            if( f startsWith "/" ) sanitize(f substring 1) else f
+
+        val cPath = currentFolder + "/" + oF + ".c"
+        val c = new File( basedir + "/" + cPath )
+        if( c.exists || gen ) // safe assumption, since no assembler files are generated
+            Some( sanitize( cPath ) )
+        else{
+            // check for assembler source
+            val asmPath = currentFolder + "/" + oF + ".S"
+            val a = new File( basedir + "/" + asmPath )
+            if( a exists )
+                Some( sanitize( asmPath ) )
+            else
+                None
+        }
+
+    }
 
 }

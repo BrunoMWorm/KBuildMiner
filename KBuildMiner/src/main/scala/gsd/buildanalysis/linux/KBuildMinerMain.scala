@@ -20,7 +20,6 @@ import java.util.Properties
 import model._
 import gsd.common.Logging
 import java.io.{PrintWriter, FileWriter, File, FileReader}
-import profiles.ProjectFactory
 import org.antlr.runtime.{ANTLRInputStream, CommonTokenStream, ANTLRFileStream}
 import org.kiama.rewriting.Rewriter._
 import org.kiama.attribution.Attribution
@@ -31,39 +30,49 @@ import org.kiama.attribution.Attribution
 object KBuildMinerMain extends optional.Application with Logging with BuildMinerCommons{
 
   // just some defaults in case nothing is specified in the properties file or on command line
-  val Linux_KERNEL = "../../../workspace/codebases/linux-2.6.28.6"
-  val PROPERTIES = "miner.properties"
-
   val AST_OUTPUT = "output/makefile_tree.xml"
   val PC_OUTPUT = "output/presence_conditions.txt"
   val CCFLAGS_OUTPUT = "output/ccflags.xml"
 
-  /**
-   * Part of the API, to be used by other projects. Tries to identify the
-   * type of project in the given folder and calculates PCs for each file.
-   * @return boolean PCs
-   */
-  def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
-    val p = ProjectFactory newProject codebase
-    val ast = buildAST( p )
-    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs, p )
-    val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
-    Map( boolPCs: _* )
-  }
+//  /**
+//   * Part of the API, to be used by other projects. Tries to identify the
+//   * type of project in the given folder and calculates PCs for each file.
+//   * @return boolean PCs
+//   */
+//  def calculatePCsForProject( codebase: String ): Map[String, Expression] = {
+//    val p = ProjectFactory newProject codebase
+//    val ast = buildAST( p )
+//    val pcs = PCDerivation.calculateFilePCs( ast, Map(), p )
+//    val boolPCs = pcs.map{ case (f,p) => (f, rewrite( toBoolean )(p) ) }.toList
+//    Map( boolPCs: _* )
+//  }
 
-  def main( codebase: Option[String],
+    /**
+     *
+     * @param codebase root folder of the project
+     * @param topFolders comma separated list of folders or files to start with. folders are inspected for Makefile or Kconfig files within them
+     * @param astOutput output file for ast
+     * @param pcOutput output file for PCs
+     * @param ccflagsOutput output files for cc flags
+     * @param saveAST whether to store the AST
+     */
+  def main( codebase: String,
+            topFolders: String,
             astOutput: Option[String],
             pcOutput: Option[String],
             ccflagsOutput: Option[String],
             saveAST: Option[String] ){
 
-    val _codebase   = getArg( codebase, "codebase", Linux_KERNEL )
+    val _codebase   = codebase
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
     val _ccflagsOutput   = getArg( pcOutput, "ccflagsOutput", CCFLAGS_OUTPUT )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
-    val p = ProjectFactory newProject _codebase
+        val _topFolders = topFolders.split(",").toList
+        assert(!_topFolders.isEmpty, "no top folders provided")
+
+    val p = new Project(_codebase, _topFolders)
     new File( "output/logs" ) mkdirs
 
     info( "Starting KBuildMiner..." )
@@ -74,11 +83,11 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
       PersistenceManager.outputXML( ast, _astOutput )
 
     info( "Deriving file presence conditions..." )
-    val pcs = PCDerivation.calculateFilePCs( ast, p.getManualPCs, p )
+    val pcs = PCDerivation.calculateFilePCs( ast,Map(), p )
 
     val out = new PrintWriter( new FileWriter( _pcOutput ) )
     info( "Saving PCs to: " + _pcOutput )
-    pcs.toList.sort( _._1 < _._1 ).foreach{ case (name,pc) =>
+    pcs.toList.sortWith( _._1 < _._1 ).foreach{ case (name,pc) =>
       out.println( name + ": " + PersistenceManager.pp( rewrite( removeCONFIG_Prefix)( pc ) ) )
     }
     out close
@@ -94,19 +103,10 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
   private def getArg[T]( arg: Option[T], name:String, default: String ): String =
     arg match{
       case Some( s )  => s.toString
-      case None       => getProperty( name, default )
+      case None       => default
     }
 
-  private def getProperty( id: String, default: String ): String = {
-    if( new File( PROPERTIES ).exists ){
-      val props = new Properties
-      // would rather like to use getClass.getResourceAsStream, but would need to
-      // put the properties file in the classpath, not just in project root
-      props.load( new FileReader( PROPERTIES ) )
-      props.getProperty( id, default )
-    }else                                     
-      default
-  }
+
 
 
 
