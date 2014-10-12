@@ -62,26 +62,30 @@ IFEQ
      {
      String value = $selec.text != null ? $selec.text : "";
      modelFactory.pushIf( new Eq( new Identifier( $name.text ), new StringLiteral( value ) ) );
-     System.out.println("found ifeq "+$name.text + " = " + value );}
+//     System.out.println("found ifeq "+$name.text + " = " + value );
+     }
    ;
 IFNEQ
   : 'ifneq' WS '(' WS? '$(' name=CONFIGVAR ')' WS? ',' WS? selec=IFEQVALUE? WS? ')' CR
      {
      String value = $selec.text != null ? $selec.text : "";
      modelFactory.pushIf( new NEq( new Identifier( $name.text ), new StringLiteral( value ) ) );
-     System.out.println("found nifeq "+$name.text + " = " + $selec.text );}
+//     System.out.println("found nifeq "+$name.text + " = " + $selec.text );
+     }
    ;
 IFDEF
   : 'ifdef' WS name=CONFIGVAR CR
      {
      modelFactory.pushIf( new Defined( new Identifier( $name.text ) ) );
-     System.out.println("found ifdef "+$name.text );}
+//     System.out.println("found ifdef "+$name.text );
+     }
   ;
 IFNDEF
   : 'ifndef' WS name=CONFIGVAR CR
      {
      modelFactory.pushIf( new Not( new Defined( new Identifier( $name.text ) ) ) );
-     System.out.println("found ifndef "+$name.text );}
+//     System.out.println("found ifndef "+$name.text );
+     }
   ;
 
 UnsupportedRegocnizedIFEQ
@@ -138,7 +142,7 @@ ELSE
   : 'else' CR
      {
 	modelFactory.pushElse();
-        System.out.println("found else");
+//        System.out.println("found else");
      }
   ;
   
@@ -146,7 +150,7 @@ ENDIF
   : 'endif' CR
      {
      modelFactory.popEndIf();
-     System.out.println("found endif");
+//     System.out.println("found endif");
      }
   ;   
 
@@ -155,7 +159,7 @@ LISTROW
   : WS? listname=LISTE LISTASSIGNMENT name=ListOfObjectsOrDirs CR
   {
      
-    System.out.println( "==List: " + currentListName + ", Var: " + currentSelection + " | $(" + currentVariable + "): " + elements_objects + elements_folders + elements_variables );
+//    System.out.println( "==List: " + currentListName + ", Var: " + currentSelection + " | $(" + currentVariable + "): " + elements_objects + elements_folders + elements_variables );
      
     Expression exp = null;
      
@@ -255,7 +259,7 @@ LISTE
 }
   : ('A'..'Z'|'a'..'z'|'0'..'9'|'-'|'_'|'0'..'9')+ '-' ( s=SELECTION | VARIABLE )
   { 
-    System.out.println("!!!" + getText() + "!!!" );
+//    System.out.println("!!!" + getText() + "!!!" );
     currentListName = getText().trim().substring ( 0, getText().trim().lastIndexOf('-') );
     currentSelection = $s.text;
   };
@@ -266,7 +270,8 @@ ARBITRARYVARASSIGNMENT
     WS? n=NA la=LISTASSIGNMENT v=VA2 CR
     { vars.put( $n.text, $v.text );
     modelFactory.addVariableAssignment( $n.text, $la.text, $v.text );
-    System.out.println ("Found var assignment: " + $n.text + $la.text + $v.text ); }
+//    System.out.println ("Found var assignment: " + $n.text + $la.text + $v.text ); 
+    }
   ;
 
 /*
@@ -283,7 +288,8 @@ ARBITRARYVARASSIGNMENT_AS_LIST
 	{
 	modelFactory.popListVariable();
 	modelFactory.addVariableAssignment( $n.text, $la.text, $wholeValue.text );
-	System.out.println("Found another variable that contains a list"); }
+//	System.out.println("Found another variable that contains a list"); 
+        }
 	;
 
 fragment AVA_HELPER1 : (v=VA {
