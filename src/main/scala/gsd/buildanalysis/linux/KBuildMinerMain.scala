@@ -30,8 +30,10 @@ import org.kiama.attribution.Attribution
 object KBuildMinerMain extends optional.Application with Logging with BuildMinerCommons{
 
   // just some defaults in case nothing is specified in the properties file or on command line
-  val AST_OUTPUT = "output/makefile_tree.xml"
-  val PC_OUTPUT = "output/presence_conditions.txt"
+//  val AST_OUTPUT = "output/makefile_tree.xml"
+  val AST_OUTPUT = "ast.xml"
+//  val PC_OUTPUT = "output/presence_conditions.txt"
+  val PC_OUTPUT = "pc.txt"
   val CCFLAGS_OUTPUT = "output/ccflags.xml"
 
 //  /**
@@ -56,21 +58,24 @@ object KBuildMinerMain extends optional.Application with Logging with BuildMiner
      * @param ccflagsOutput output files for cc flags
      * @param saveAST whether to store the AST
      */
-  def main( codebase: String,
-            topFolders: String,
+  def main( codebase: Option[String],
+            topFolders: Option[String],
             astOutput: Option[String],
             pcOutput: Option[String],
             ccflagsOutput: Option[String],
             saveAST: Option[String] ){
 
-    val _codebase   = codebase
+    // val _codebase   = codebase
+    val _codebase   = "../gitbusybox"
     val _astOutput  = getArg( astOutput, "astOutput", AST_OUTPUT )
     val _pcOutput   = getArg( pcOutput, "pcOutput", PC_OUTPUT )
     val _ccflagsOutput   = getArg( ccflagsOutput, "ccflagsOutput", CCFLAGS_OUTPUT )
     val _saveAST = getArg( saveAST, "saveAST", "true" )
 
-        val _topFolders = topFolders.split(",").toList
-        assert(!_topFolders.isEmpty, "no top folders provided")
+    // val _topFolders = topFolders.split(",").toList
+    // assert(!_topFolders.isEmpty, "no top folders provided")
+    val _topFolders = "applets,archival,archival/libarchive,console-tools,coreutils,coreutils/libcoreutils,debianutils,e2fsprogs,editors,findutils,init,libbb,libpwdgrp,loginutils,mailutils,miscutils,modutils,networking,networking/libiproute,networking/udhcp,printutils,procps,runit,selinux,shell,sysklogd,util-linux,util-linux/volume_id".split(",").toList
+    assert(!_topFolders.isEmpty, "no top folders provided")
 
     val p = new Project(_codebase, _topFolders)
     new File( "output/logs" ) mkdirs
